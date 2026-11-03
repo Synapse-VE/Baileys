@@ -34,6 +34,9 @@ jobs:
       - name: Generate statics from the repository root
         run: yarn gen:protobuf
 
+      - name: Committed statics must match the proto
+        run: git diff --exit-code -- WAProto/index.js WAProto/index.d.ts
+
       - name: Reject proto3-invalid required fields
         run: |
           if grep -nE '^[[:space:]]*required ' WAProto/WAProto.proto; then
