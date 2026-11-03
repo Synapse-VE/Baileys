@@ -1,10 +1,7 @@
 import { hkdfSync, randomBytes } from 'crypto'
 import { proto } from '../../../WAProto/index.js'
 import { aesDecryptGCM, aesEncryptGCM } from '../../Utils/crypto'
-import {
-	decryptMediaRetryData,
-	encryptMediaRetryRequest
-} from '../../Utils/messages-media'
+import { decryptMediaRetryData, encryptMediaRetryRequest } from '../../Utils/messages-media'
 import { type BinaryNode, getBinaryNodeChild } from '../../WABinary'
 
 describe('media retry key', () => {
