@@ -4,6 +4,18 @@ Documento de trabajo del fork `Synapse-VE/Baileys`. El objetivo es mantener la l
 alineada con el protocolo que habla WhatsApp Web hoy, y enterarnos de los cambios antes
 de que rompan el flujo normal de un usuario.
 
+## Estado de ejecución (2026-11-03)
+
+| Fase | PR | Estado | Evidencia |
+|---|---|---|---|
+| 0 | #1 | mergeada | `.env*` ignorado, plan versionado, CI verde |
+| 1 | #2 | mergeada | tests de regresión red/green, `proto-check` verde |
+| 2 | #3 | mergeada | proto `2.3000.1052769028`, 604 mensajes, compat legacy, 409 tests |
+| 3 | #4 | mergeada | versión `2.3000.1052769028`, E2E con `ACK 2` y `ACK 3` |
+
+Pendientes: fases 4 (capacidades), 5 (resiliencia) y 6 (vigilancia).
+
+
 ## Estado medido (2026-11-03)
 
 - `master` del fork idéntico a `WhiskeySockets/Baileys` (`81345beb`, 26-oct-2026).
