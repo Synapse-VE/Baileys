@@ -750,8 +750,21 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 				return
 			}
 
-			if (normalizeMessageContent(message)?.pinInChatMessage || normalizeMessageContent(message)?.reactionMessage) {
+			const isPollVote = !!normalizeMessageContent(message)?.pollUpdateMessage
+			if (
+				normalizeMessageContent(message)?.pinInChatMessage ||
+				normalizeMessageContent(message)?.reactionMessage ||
+				isPollVote
+			) {
 				extraAttrs['decrypt-fail'] = 'hide' // todo: expand for reactions and other types
+			}
+
+			// as a phone's vote; without the meta node the server acks the vote but does not deliver it
+			if (isPollVote && !additionalNodes?.some(node => node.tag === 'meta')) {
+				additionalNodes = [
+					...(additionalNodes || []),
+					{ tag: 'meta', attrs: { polltype: 'vote', content_type: 'add_on' } }
+				]
 			}
 
 			if (isGroupOrStatus && !isRetryResend) {
@@ -1018,7 +1031,8 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 					attrs: {
 						v: '2',
 						type,
-						count: participant!.count.toString()
+						count: participant!.count.toString(),
+						...(extraAttrs['decrypt-fail'] ? { 'decrypt-fail': extraAttrs['decrypt-fail'] } : {})
 					},
 					content: encryptedContent
 				})
