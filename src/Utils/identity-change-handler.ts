@@ -28,6 +28,12 @@ export type IdentityChangeContext = {
 	 * Must not throw; implementations are responsible for their own error handling.
 	 */
 	onBeforeSessionRefresh?: (jid: string) => void
+	/**
+	 * Invoked for every identity notification, including the account's own
+	 * primary device. `me` tells the caller whether it was a self change.
+	 * Must not throw; implementations are responsible for their own error handling.
+	 */
+	onParticipantIdentityChange?: (jid: string, me: boolean) => void | Promise<void>
 }
 
 export async function handleIdentityChange(
@@ -53,6 +59,15 @@ export async function handleIdentityChange(
 	}
 
 	const isSelfPrimary = ctx.meId && (areJidsSameUser(from, ctx.meId) || (ctx.meLid && areJidsSameUser(from, ctx.meLid)))
+
+	if (ctx.onParticipantIdentityChange) {
+		try {
+			await ctx.onParticipantIdentityChange(from, !!isSelfPrimary)
+		} catch (error) {
+			ctx.logger.warn({ err: error, jid: from }, 'onParticipantIdentityChange callback failed')
+		}
+	}
+
 	if (isSelfPrimary) {
 		ctx.logger.info({ jid: from }, 'self primary identity changed')
 		return { action: 'skipped_self_primary' }

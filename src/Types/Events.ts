@@ -104,6 +104,8 @@ export type BaileysEventMap = {
 		messageTimestamp?: number
 	}
 
+	'identity-change': { jid: string; me: boolean }
+
 	'blocklist.set': { blocklist: string[] }
 	'blocklist.update': { blocklist: string[]; type: 'add' | 'remove' }
 
