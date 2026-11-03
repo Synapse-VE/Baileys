@@ -38,7 +38,7 @@
     "release": "release-it",
     "test": "node --experimental-vm-modules ./node_modules/.bin/jest --testMatch '**/*.test.ts'",
     "test:e2e": "NODE_TLS_REJECT_UNAUTHORIZED=0 node --experimental-vm-modules ./node_modules/.bin/jest --runInBand --forceExit --testMatch '**/*.test-e2e.ts'",
-    "test:proto": "node --test proto-extract/field-labels.test.js scripts/__tests__/generate-statics.test.mjs",
+    "test:proto": "node --test proto-extract/field-labels.test.js scripts/__tests__/generate-statics.test.mjs scripts/__tests__/proto-compat.test.mjs scripts/__tests__/proto-file.test.mjs",
     "update:version": "tsx ./scripts/update-version.ts"
   },
   "dependencies": {
