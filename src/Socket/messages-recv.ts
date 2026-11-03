@@ -2011,6 +2011,14 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 	ws.on('CB:notification', async (node: BinaryNode) => {
 		await processNode('notification', node, 'handling notification', handleNotification)
 	})
+
+	// Some accounts now receive contacts' statuses as a top-level <status> stanza
+	// instead of <message from="status@broadcast">. It is not decoded here, but it
+	// must be acked or the server ends the stream about 50 minutes later.
+	ws.on('CB:status', (node: BinaryNode) => {
+		sendMessageAck(node).catch(error => onUnexpectedError(error, 'acking status'))
+	})
+
 	ws.on('CB:ack,class:message', (node: BinaryNode) => {
 		handleBadAck(node).catch(error => onUnexpectedError(error, 'handling bad ack'))
 	})

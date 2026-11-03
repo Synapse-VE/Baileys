@@ -862,7 +862,13 @@ export const makeSocket = (config: SocketConfig) => {
 		}
 	})
 	ws.on('error', mapWebSocketError(end))
-	ws.on('close', () => void end(new Boom('Connection Terminated', { statusCode: DisconnectReason.connectionClosed })))
+	ws.on('close', (code?: number, reason?: Buffer | string) => {
+		// Surface the close frame: 1000/1001 is the server recycling the connection,
+		// 1006 is the TCP path dying without a frame, 1011-1013 are server faults.
+		const reasonText = reason ? String(reason).trim() : ''
+		const detail = typeof code === 'number' ? ` (ws close ${code}${reasonText ? `: ${reasonText}` : ''})` : ''
+		void end(new Boom(`Connection Terminated${detail}`, { statusCode: DisconnectReason.connectionClosed }))
+	})
 	// the server terminated the connection
 	ws.on(
 		'CB:xmlstreamend',
