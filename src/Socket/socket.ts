@@ -38,6 +38,7 @@ import {
 	getCompanionPlatformId,
 	getErrorCodeFromStreamError,
 	getNextPreKeysNode,
+	getPreKeyTopUpCount,
 	INITIAL_SYNC_FLUSH_TIMEOUT_MS,
 	makeEventBuffer,
 	makeNoiseHandler,
@@ -559,10 +560,8 @@ export const makeSocket = (config: SocketConfig) => {
 
 	const uploadPreKeysToServerIfRequired = async () => {
 		try {
-			let count = 0
 			const preKeyCount = await getAvailablePreKeysOnServer()
-			if (preKeyCount === 0) count = INITIAL_PREKEY_COUNT
-			else count = MIN_PREKEY_COUNT
+			const count = getPreKeyTopUpCount(preKeyCount, INITIAL_PREKEY_COUNT, MIN_PREKEY_COUNT)
 			const { exists: currentPreKeyExists, currentPreKeyId } = await verifyCurrentPreKeyExists()
 
 			logger.info(`${preKeyCount} pre-keys found on server`)
@@ -579,7 +578,7 @@ export const makeSocket = (config: SocketConfig) => {
 				if (missingCurrentPreKey) reasons.push(`current prekey ${currentPreKeyId} missing from storage`)
 
 				logger.info(`Uploading PreKeys due to: ${reasons.join(', ')}`)
-				await uploadPreKeys(count)
+				await uploadPreKeys(count || MIN_PREKEY_COUNT)
 			} else {
 				logger.info(`PreKey validation passed - Server: ${preKeyCount}, Current prekey ${currentPreKeyId} exists`)
 			}

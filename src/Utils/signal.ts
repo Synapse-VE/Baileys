@@ -259,3 +259,12 @@ export const getNextPreKeysNode = async (state: AuthenticationState, count: numb
 
 	return { update, node }
 }
+
+/**
+ * Every reconnect used to top up the server pool with MIN_PREKEY_COUNT keys,
+ * so a reconnect storm minted a new small batch each time. Refill with the
+ * initial batch size instead: the server stays healthy longer and the local
+ * store grows far slower. Reclaiming already-minted keys remains open (#2797).
+ */
+export const getPreKeyTopUpCount = (serverCount: number, initialCount: number, minCount: number) =>
+	serverCount <= minCount ? initialCount : 0
