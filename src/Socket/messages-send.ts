@@ -561,8 +561,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 
 		const meJid = jidNormalizedUser(authState.creds.me.id)
 		const isHistorySync =
-			pdoMessage.peerDataOperationRequestType ===
-			proto.Message.PeerDataOperationRequestType.HISTORY_SYNC_ON_DEMAND
+			pdoMessage.peerDataOperationRequestType === proto.Message.PeerDataOperationRequestType.HISTORY_SYNC_ON_DEMAND
 
 		const msgId = await relayMessage(meJid, protocolMessage, {
 			additionalAttributes: {
