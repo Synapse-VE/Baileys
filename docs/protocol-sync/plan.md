@@ -162,3 +162,16 @@ Transversal: telemetría de tipos desconocidos, `mediaDomainInfo` para host de m
 - El bump de versión habilita flujos nuevos: fase separada, soak y rollback de un commit.
 - PQXDH obligatorio: riesgo estructural; vigilar y preparar spike.
 - Divergencia con upstream: rebase semanal y commits de vigilancia separados.
+
+## Estado F7-F11 (2026-11-03)
+
+| Fase | Estado | PRs / notas |
+|---|---|---|
+| 7 | Casi completa | #16 consolidación watchers, #17 status ACK/auth atómica/cierre/view-once, #18 ALS+offline, #19 retry 1:1. Pendiente: prekeys #2797, cache retry #2802 y watchdog de sesiones sordas #2491 |
+| 8 | Parcial | #26 history on-demand. Pendiente: media 403/404 (#2834/#2835), PN→LID (#2711), TC tokens (#2873) |
+| 9 | Parcial | #27 communities + retry receipts. Pendiente: edits cifrados (#2743), recibos (#2804/#2879), polls (#2870), presencia (#2789), pairing (#2872) |
+| 10 | Completa según alcance | #21: runtime audit limpio, ws/protobufjs/music-metadata/link-preview, Node 22/24/26, Dependabot, smoke del paquete. E2E/alertas/backups quedaron fuera por decisión |
+| 11 | Documentada | `pqxdh-spike.md`: opciones, plan y riesgos; passkey/msmsg/cstoken evaluados |
+
+Deuda conocida: `protobufjs-cli@1.2.0` (build-time, esquema confiable) y
+advisories de herramientas de desarrollo; la auditoría de producción está limpia.
