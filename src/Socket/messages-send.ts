@@ -35,6 +35,7 @@ import {
 	parseAndInjectE2ESessions,
 	unixTimestampSeconds
 } from '../Utils'
+import { resolveLidDestination } from '../Utils/lid'
 import { getUrlInfo } from '../Utils/link-preview'
 import { makeKeyedMutex, makeMutex } from '../Utils/make-mutex'
 import { getMessageReportingToken, shouldIncludeReportingToken } from '../Utils/reporting-utils'
@@ -674,6 +675,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 			statusJidList
 		}: MessageRelayOptions
 	) => {
+		jid = await resolveLidDestination(jid, getLIDForPN, logger)
 		const meId = assertMeId(authState.creds)
 		const meLid = authState.creds.me?.lid
 		const isRetryResend = Boolean(participant?.jid)
@@ -1353,6 +1355,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 			return message
 		},
 		sendMessage: async (jid: string, content: AnyMessageContent, options: MiscMessageGenerationOptions = {}) => {
+			jid = await resolveLidDestination(jid, getLIDForPN, logger)
 			const userJid = authState.creds.me!.id
 			if (
 				typeof content === 'object' &&
