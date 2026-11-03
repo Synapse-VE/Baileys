@@ -34,15 +34,15 @@ Si falla el último punto, regenerar y commitear el resultado.
 
 ## Advertencias
 
-- `fetchLatestBaileysVersion()` lee el `master` de `WhiskeySockets/Baileys`, no
-  WhatsApp ni este fork. Si un bot la llama, sobrescribe la versión del fork con
-  la de upstream, que puede ser vieja. Usar `fetchLatestWaWebVersion()` o fijar
-  la versión.
-- `libsignal@6.0.0` ejecuta `console.info('Closing session:', session)` y
-  `console.warn('Session already closed', session)`, lo que vuelca material de
-  claves (`rootKey`, `chainKey`, claves efímeras) a stdout. En producción eso
-  termina en los logs del hosting. Mitigación: filtrar esos `console` en el bot
-  o parchear la dependencia.
+- `fetchLatestBaileysVersion()` consulta `web.whatsapp.com/sw.js` directamente
+  y compara contra la versión local; ya no depende de ningún repositorio.
+- `libsignal@6.0.0` volcaba sesiones completas (claves incluidas) por
+  `console.info`/`console.warn`. `scripts/patch-libsignal.cjs` corre en
+  `postinstall` y las deja detrás de `LIBSIGNAL_DEBUG`. El test
+  `libsignal-logging.test.ts` falla si el parche deja de aplicarse.
+- `getDisconnectAction` y `getReconnectDelay` centralizan la política de
+  reconexión: 440/401/403/411/500 no reconectan, 503 espera y el resto usa
+  backoff exponencial con jitter.
 - El workflow `PR Comment` está deshabilitado en el fork porque depende del
   secret `PERSONAL_TOKEN`.
 - El workflow `E2E Tests` corre en push a `master` y falla en el fork por el

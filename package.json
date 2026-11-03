@@ -18,7 +18,8 @@
   "files": [
     "lib/**/*",
     "WAProto/**/*",
-    "engine-requirements.js"
+    "engine-requirements.js",
+    "scripts/patch-libsignal.cjs"
   ],
   "scripts": {
     "build:all": "npm run build && npm run build:docs",
@@ -34,6 +35,7 @@
     "lint:fix": "npm run format && npm run lint -- --fix",
     "prepack": "npm run build",
     "prepare": "npm run build",
+    "postinstall": "node scripts/patch-libsignal.cjs",
     "preinstall": "node ./engine-requirements.js",
     "release": "release-it",
     "test": "node --experimental-vm-modules ./node_modules/.bin/jest --testMatch '**/*.test.ts'",
