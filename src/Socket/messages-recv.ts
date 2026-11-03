@@ -14,7 +14,6 @@ import type {
 	GroupParticipant,
 	MessageReceiptType,
 	MessageRelayOptions,
-	MessageUserReceipt,
 	NewChatMessageCapInfo,
 	SocketConfig,
 	WACallEvent,
@@ -57,6 +56,7 @@ import { normalizeHistoryTimestamp } from '../Utils/history'
 import { makeMutex } from '../Utils/make-mutex'
 import { isOfflineAttr } from '../Utils/offline'
 import { makeOfflineNodeProcessor, type MessageType } from '../Utils/offline-node-processor'
+import { getReceiptTimestampField } from '../Utils/receipts'
 import { buildAckStanza } from '../Utils/stanza-ack'
 import {
 	buildMergedTcTokenIndexWrite,
@@ -77,6 +77,7 @@ import {
 	getBinaryNodeChildren,
 	getBinaryNodeChildString,
 	getBinaryNodeChildUInt,
+	isJidBroadcast,
 	isJidGroup,
 	isJidNewsletter,
 	isJidStatusBroadcast,
@@ -1497,27 +1498,47 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 					) {
 						if (isJidGroup(remoteJid) || isJidStatusBroadcast(remoteJid!)) {
 							if (attrs.participant) {
-								const updateKey: keyof MessageUserReceipt =
-									status === proto.WebMessageInfo.Status.DELIVERY_ACK ? 'receiptTimestamp' : 'readTimestamp'
-								ev.emit(
-									'message-receipt.update',
-									ids.map(id => ({
-										key: { ...key, id },
-										receipt: {
-											userJid: jidNormalizedUser(attrs.participant),
-											[updateKey]: +attrs.t!
-										}
-									}))
-								)
+								const updateKey = getReceiptTimestampField(status)
+								if (updateKey) {
+									ev.emit(
+										'message-receipt.update',
+										ids.map(id => ({
+											key: { ...key, id },
+											receipt: {
+												userJid: jidNormalizedUser(attrs.participant),
+												[updateKey]: +attrs.t!
+											}
+										}))
+									)
+								}
 							}
 						} else {
 							ev.emit(
 								'messages.update',
 								ids.map(id => ({
 									key: { ...key, id },
-									update: { status, messageTimestamp: toNumber(+(attrs.t ?? 0)) }
+									update: { status }
 								}))
 							)
+
+							const timestampField = getReceiptTimestampField(status)
+							const timestamp = Number(attrs.t)
+							if (
+								timestampField &&
+								Number.isSafeInteger(timestamp) &&
+								timestamp > 0 &&
+								remoteJid &&
+								!isJidBroadcast(remoteJid) &&
+								!isJidBroadcast(attrs.from)
+							) {
+								ev.emit(
+									'message-receipt.update',
+									ids.map(id => ({
+										key: { ...key, id },
+										receipt: { userJid: jidNormalizedUser(attrs.from), [timestampField]: timestamp }
+									}))
+								)
+							}
 						}
 					}
 

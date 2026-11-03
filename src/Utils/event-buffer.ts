@@ -503,7 +503,14 @@ function append<E extends BufferableEvent>(
 
 				if (data.messageUpdates[key]) {
 					logger.debug('absorbed prior message update in message upsert')
+					// a receipt update carries the receipt time as messageTimestamp; it must not
+					// replace the message's own timestamp
+					const messageTimestamp = message.messageTimestamp
 					Object.assign(message, data.messageUpdates[key].update)
+					if (messageTimestamp !== undefined) {
+						message.messageTimestamp = messageTimestamp
+					}
+
 					delete data.messageUpdates[key]
 				}
 
