@@ -70,6 +70,13 @@ import {
 import { USyncQuery, USyncUser } from '../WAUSync'
 import { makeNewsletterSocket } from './newsletter'
 
+/**
+ * Retry receipts carry the exact device that failed to decrypt. Fanning the message
+ * out to every device again would encrypt it twice (a bare <enc> plus a <participants>
+ * node) and the server rejects that stanza with smax-invalid (479).
+ */
+export const shouldFanOutRecipients = (isRetryResend: boolean) => !isRetryResend
+
 export const getMediaType = (message: proto.IMessage) => {
 	if (message.imageMessage || message.instantImageMessage) {
 		return 'image'
@@ -851,7 +858,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 				})
 
 				await authState.keys.set({ 'sender-key-memory': { [jid]: senderKeyMap } })
-			} else {
+			} else if (shouldFanOutRecipients(isRetryResend)) {
 				// ADDRESSING CONSISTENCY: Match own identity to conversation context
 				// TODO: investigate if this is true
 				let ownId = meId
