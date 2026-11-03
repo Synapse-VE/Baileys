@@ -95,6 +95,8 @@ export type SocketConfig = {
 	linkPreviewImageThumbnailWidth: number
 	/** Should Baileys ask the phone for full history, will be received async */
 	syncFullHistory: boolean
+	/** Release the initial event buffer if the offline marker never arrives */
+	initialSyncFlushTimeoutMs?: number
 	/** Should baileys fire init queries automatically, default true */
 	fireInitQueries: boolean
 	/**

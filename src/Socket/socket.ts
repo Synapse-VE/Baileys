@@ -38,9 +38,11 @@ import {
 	getCompanionPlatformId,
 	getErrorCodeFromStreamError,
 	getNextPreKeysNode,
+	INITIAL_SYNC_FLUSH_TIMEOUT_MS,
 	makeEventBuffer,
 	makeNoiseHandler,
 	promiseTimeout,
+	scheduleInitialBufferFlush,
 	signedKeyPair,
 	xmppSignedPreKey
 } from '../Utils'
@@ -1022,12 +1024,25 @@ export const makeSocket = (config: SocketConfig) => {
 	})
 
 	let didStartBuffer = false
+	let cancelBufferFlush: (() => void) | undefined
+
 	process.nextTick(() => {
 		if (creds.me?.id) {
 			// start buffering important events
 			// if we're logged in
 			ev.buffer()
 			didStartBuffer = true
+			// If the server never sends `<ib><offline>` (e.g. more pending items than the
+			// preview batch), the buffer would hold every event forever. Release it anyway.
+			cancelBufferFlush = scheduleInitialBufferFlush(
+				() => {
+					if (!didStartBuffer) return
+					didStartBuffer = false
+					ev.flush()
+				},
+				logger,
+				config.initialSyncFlushTimeoutMs ?? INITIAL_SYNC_FLUSH_TIMEOUT_MS
+			)
 		}
 
 		ev.emit('connection.update', { connection: 'connecting', receivedPendingNotifications: false, qr: undefined })
@@ -1041,9 +1056,12 @@ export const makeSocket = (config: SocketConfig) => {
 		logger.info(`handled ${offlineNotifs} offline messages/notifications`)
 		if (didStartBuffer) {
 			ev.flush()
+			didStartBuffer = false
 			logger.trace('flushed events for initial buffer')
 		}
 
+		cancelBufferFlush?.()
+		cancelBufferFlush = undefined
 		ev.emit('connection.update', { receivedPendingNotifications: true })
 	})
 
