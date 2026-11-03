@@ -1,5 +1,5 @@
-import { proto } from '../../../WAProto/index.js'
 import Long from 'long'
+import { proto } from '../../../WAProto/index.js'
 import { normalizeHistoryTimestamp, processHistoryMessage } from '../../Utils/history'
 
 describe('processHistoryMessage', () => {
