@@ -43,6 +43,9 @@ Si falla el último punto, regenerar y commitear el resultado.
 - `getDisconnectAction` y `getReconnectDelay` centralizan la política de
   reconexión: 440/401/403/411/500 no reconectan, 503 espera y el resto usa
   backoff exponencial con jitter.
+- `createSessionWatchdog` detecta sesiones sordas (socket abierto sin
+  `messages.upsert`); el bot debe llamar `noteActivity()` en cada mensaje y
+  `check()` periódicamente, cerrando el socket cuando dispare.
 - El workflow `PR Comment` está deshabilitado en el fork porque depende del
   secret `PERSONAL_TOKEN`.
 - El workflow `E2E Tests` corre en push a `master` y falla en el fork por el
