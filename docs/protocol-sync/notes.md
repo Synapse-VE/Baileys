@@ -2,7 +2,7 @@
 
 ## Refrescar el proto
 
-1. Instalar dependencias del extractor: `cd proto-extract && npm ci` (o `yarn install`).
+1. Instalar dependencias del extractor: `cd proto-extract && yarn install`.
 2. Extraer: `node proto-extract/index.js` (escribe `WAProto/WAProto.proto`).
 3. Aplicar compatibilidad legacy: `node scripts/proto-compat.mjs`.
 4. Regenerar estáticos desde la raíz: `yarn gen:protobuf`.

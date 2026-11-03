@@ -35,7 +35,7 @@ jobs:
       - name: Extract the current WhatsApp schema
         working-directory: proto-extract
         run: |
-          npm ci --no-fund --no-audit
+          yarn install --immutable
           node index.js
 
       - name: Apply compatibility layer
