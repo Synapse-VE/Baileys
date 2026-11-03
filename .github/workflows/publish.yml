@@ -24,7 +24,9 @@ jobs:
           scope: '@synapse-ve'
 
       - name: Enable Corepack
-        run: corepack enable
+        run: |
+          command -v corepack >/dev/null || npm install -g corepack@latest
+          corepack enable
 
       - name: Install packages
         run: yarn install --immutable
