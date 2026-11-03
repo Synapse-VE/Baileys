@@ -1,0 +1,88 @@
+name: Protocol Watch
+
+on:
+  schedule:
+    - cron: '15 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: protocol-watch
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install packages
+        run: yarn install --immutable
+
+      - name: Extract the current WhatsApp schema
+        working-directory: proto-extract
+        run: |
+          npm ci --no-fund --no-audit
+          node index.js
+
+      - name: Apply compatibility layer
+        run: node scripts/proto-compat.mjs
+
+      - name: Update advertised version
+        run: yarn update:version
+
+      - name: Regenerate statics
+        run: yarn gen:protobuf
+
+      - name: Update protocol status
+        run: node scripts/protocol-status.mjs
+
+      - name: Regression tests
+        run: |
+          yarn test:proto
+          yarn test:scripts
+
+      - name: Lint and test
+        run: |
+          yarn lint
+          yarn test
+
+      - name: Open pull request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: update/protocol
+          delete-branch: true
+          title: 'chore(protocol): sync WhatsApp schema'
+          commit-message: 'chore(protocol): sync WhatsApp schema'
+          body: |
+            Automated schema refresh from the live WhatsApp Web bundle.
+
+            - `WAProto/WAProto.proto` regenerated with `proto-extract`
+            - compatibility layer applied for legacy LID/poll fields
+            - advertised version updated and statics regenerated
+            - `docs/protocol-sync/status.md` refreshed
+
+            The workflow already ran lint, tests and the proto regression suite.
+
+      - name: Open an issue when the refresh fails
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --title "Protocol watch failed" \
+            --body "The scheduled schema refresh failed: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"

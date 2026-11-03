@@ -1,0 +1,47 @@
+name: E2E Live
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'JID destino del mensaje de prueba (ej. 1234567890@s.whatsapp.net)'
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install packages
+        run: yarn install --immutable
+
+      - name: Build
+        run: yarn build
+
+      - name: Decode auth state
+        run: |
+          if [ -z "${{ secrets.E2E_AUTH_B64 }}" ]; then
+            echo "E2E_AUTH_B64 is not configured, the smoke will skip"
+            exit 0
+          fi
+          mkdir -p .e2e-auth
+          printf '%s' "${{ secrets.E2E_AUTH_B64 }}" | base64 -d | tar -xz -C .e2e-auth
+
+      - name: Run live smoke
+        env:
+          E2E_AUTH_DIR: .e2e-auth
+          E2E_TARGET: ${{ inputs.target }}
+        run: node scripts/e2e-live.mjs

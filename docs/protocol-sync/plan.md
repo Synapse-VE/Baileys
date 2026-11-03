@@ -12,8 +12,12 @@ de que rompan el flujo normal de un usuario.
 | 1 | #2 | mergeada | tests de regresión red/green, `proto-check` verde |
 | 2 | #3 | mergeada | proto `2.3000.1052769028`, 604 mensajes, compat legacy, 409 tests |
 | 3 | #4 | mergeada | versión `2.3000.1052769028`, E2E con `ACK 2` y `ACK 3` |
+| 4 | #6 | mergeada | 22 tipos nuevos documentados; envoltorios, imagen instantánea y encuestas V6 |
+| 5 | #7 | mergeada | política de reconexión, versión independiente, logs de libsignal |
+| 6 | #8, #9 | #8 mergeada; #9 en revisión | paquete `@synapse-ve/baileys` en GitHub Packages + vigilancia diaria |
 
-Pendientes: fases 4 (capacidades), 5 (resiliencia) y 6 (vigilancia).
+Pendientes: validar los workflows de vigilancia en producción y cubrir los tipos
+nuevos que quedaron solo en decodificación.
 
 
 ## Estado medido (2026-11-03)
