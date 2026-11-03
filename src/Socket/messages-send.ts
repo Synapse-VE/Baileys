@@ -39,6 +39,7 @@ import { resolveLidDestination } from '../Utils/lid'
 import { getUrlInfo } from '../Utils/link-preview'
 import { makeKeyedMutex, makeMutex } from '../Utils/make-mutex'
 import { getMessageReportingToken, shouldIncludeReportingToken } from '../Utils/reporting-utils'
+import { hasUsableSenderKey } from '../Utils/sender-key'
 import {
 	buildMergedTcTokenIndexWrite,
 	isTcTokenExpired,
@@ -151,6 +152,12 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 	 * Entries are always removed in `.finally()`, so the set is bounded by concurrency.
 	 */
 	const inFlightTcTokenIssuance = new Set<string>()
+
+	/**
+	 * Devices whose identity changed recently. Their old sender key is unusable
+	 * until a new SKDM goes out, so the has-key fast path must ignore them.
+	 */
+	const recentlyChangedIdentities = new Set<string>()
 
 	const userDevicesCache =
 		config.userDevicesCache ||
@@ -835,7 +842,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 				const senderKeyRecipients: string[] = []
 				for (const device of devices) {
 					const deviceJid = device.jid
-					const hasKey = !!senderKeyMap[deviceJid]
+					const hasKey = hasUsableSenderKey(deviceJid, senderKeyMap, recentlyChangedIdentities)
 					if (
 						(!hasKey || !!participant) &&
 						!isHostedLidUser(deviceJid) &&
@@ -1289,6 +1296,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 
 	return {
 		...sock,
+		recentlyChangedIdentities,
 		userDevicesCache,
 		devicesMutex,
 		issuePrivacyTokens,

@@ -249,4 +249,45 @@ describe('Identity Change Handling', () => {
 			expect(onBeforeSessionRefresh).not.toHaveBeenCalled()
 		})
 	})
+	describe('identity change notification', () => {
+		it('reports a participant change with me=false', async () => {
+			mockValidateSession.mockResolvedValue({ exists: true })
+			mockAssertSessions.mockResolvedValue(true)
+			const onChange = jest.fn<(jid: string, me: boolean) => void>()
+
+			await handleIdentityChange(createIdentityChangeNode('user@s.whatsapp.net'), {
+				...createContext(),
+				onParticipantIdentityChange: onChange
+			})
+
+			expect(onChange).toHaveBeenCalledWith('user@s.whatsapp.net', false)
+		})
+
+		it('reports a self-primary change with me=true before skipping it', async () => {
+			const onChange = jest.fn<(jid: string, me: boolean) => void>()
+
+			const result = await handleIdentityChange(createIdentityChangeNode('myuser@s.whatsapp.net'), {
+				...createContext(),
+				onParticipantIdentityChange: onChange
+			})
+
+			expect(result.action).toBe('skipped_self_primary')
+			expect(onChange).toHaveBeenCalledWith('myuser@s.whatsapp.net', true)
+		})
+
+		it('does not abort the handler when the callback throws', async () => {
+			mockValidateSession.mockResolvedValue({ exists: true })
+			mockAssertSessions.mockResolvedValue(true)
+			const onChange = jest.fn(() => {
+				throw new Error('callback failed')
+			})
+
+			const result = await handleIdentityChange(createIdentityChangeNode('user@s.whatsapp.net'), {
+				...createContext(),
+				onParticipantIdentityChange: onChange
+			})
+
+			expect(result.action).toBe('session_refreshed')
+		})
+	})
 })

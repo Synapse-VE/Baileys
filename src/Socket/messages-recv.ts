@@ -162,6 +162,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 
 	// Debounce identity-change session refreshes per JID to avoid bursts
 	const identityAssertDebounce = new NodeCache<boolean>({ stdTTL: 5, useClones: false })
+	const identityChangeCleanupTimers = new Map<string, ReturnType<typeof setTimeout>>()
 
 	let sendActiveReceipts = false
 
@@ -793,7 +794,27 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 				assertSessions,
 				debounceCache: identityAssertDebounce,
 				logger,
-				onBeforeSessionRefresh: reissueTcTokenAfterIdentityChange
+				onBeforeSessionRefresh: reissueTcTokenAfterIdentityChange,
+				onParticipantIdentityChange: (jid, me) => {
+					const normalized = jidNormalizedUser(jid)
+					sock.recentlyChangedIdentities.add(normalized)
+					ev.emit('identity-change', { jid: normalized, me })
+
+					const existing = identityChangeCleanupTimers.get(normalized)
+					if (existing) {
+						clearTimeout(existing)
+					}
+
+					const timeout = setTimeout(
+						() => {
+							sock.recentlyChangedIdentities.delete(normalized)
+							identityChangeCleanupTimers.delete(normalized)
+						},
+						10 * 60 * 1000
+					)
+					timeout.unref()
+					identityChangeCleanupTimers.set(normalized, timeout)
+				}
 			})
 
 			if (result.action === 'no_identity_node') {
