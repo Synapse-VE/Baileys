@@ -53,6 +53,7 @@ import {
 	xmppPreKey,
 	xmppSignedPreKey
 } from '../Utils'
+import { normalizeHistoryTimestamp } from '../Utils/history'
 import { makeMutex } from '../Utils/make-mutex'
 import { isOfflineAttr } from '../Utils/offline'
 import { makeOfflineNodeProcessor, type MessageType } from '../Utils/offline-node-processor'
@@ -176,7 +177,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 				chatJid: oldestMsgKey.remoteJid,
 				oldestMsgFromMe: oldestMsgKey.fromMe,
 				oldestMsgId: oldestMsgKey.id,
-				oldestMsgTimestampMs: oldestMsgTimestamp,
+				oldestMsgTimestampMs: normalizeHistoryTimestamp(oldestMsgTimestamp),
 				onDemandMsgCount: count
 			},
 			peerDataOperationRequestType: proto.Message.PeerDataOperationRequestType.HISTORY_SYNC_ON_DEMAND

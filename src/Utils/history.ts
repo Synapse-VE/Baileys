@@ -1,3 +1,4 @@
+import type Long from 'long'
 import { pipeline } from 'stream/promises'
 import { promisify } from 'util'
 import { createInflate, inflate } from 'zlib'
@@ -159,4 +160,26 @@ export const getHistoryMsg = (message: proto.IMessage) => {
 	const anyHistoryMsg = normalizedContent?.protocolMessage?.historySyncNotification!
 
 	return anyHistoryMsg
+}
+
+/**
+ * On-demand history expects seconds, but callers often pass the WAMessage
+ * timestamp in milliseconds (or as a Long). Normalize it or the server silently
+ * drops the request.
+ */
+export const normalizeHistoryTimestamp = (timestamp: number | Long | null | undefined) => {
+	if (timestamp === null || timestamp === undefined) {
+		return undefined
+	}
+
+	let value: number
+	if (typeof timestamp === 'number') {
+		value = timestamp
+	} else if (typeof timestamp === 'object' && 'toNumber' in timestamp) {
+		value = (timestamp as Long).toNumber()
+	} else {
+		return undefined
+	}
+
+	return value > 1e11 ? Math.floor(value / 1000) : value
 }
