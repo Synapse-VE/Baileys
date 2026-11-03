@@ -56,3 +56,20 @@ Si falla el último punto, regenerar y commitear el resultado.
 - `.tools/` contiene toolchain, sesiones y scripts locales; no se versiona.
 - La sesión de prueba puede desvincularse desde WhatsApp en cualquier momento;
   volver a vincularla requiere un QR nuevo.
+
+## Vigilancia automática
+
+- `protocol-watch` (diario, 03:15 UTC): extrae el proto, aplica la capa de
+  compatibilidad, actualiza la versión, regenera estáticos y corre lint/tests.
+  Si hay cambios abre el PR `update/protocol`; si falla, abre un issue.
+- `version-watch` (diario, 03:45 UTC): solo bumpea la versión anunciada y abre
+  el PR `update/version`.
+- `feature-watch` (diario, 05:15 UTC): descarga el bundle y cuenta los campos
+  del handshake post-cuantico. Si pasan de definición a uso real, abre un issue.
+- `e2e-live` (manual): requiere los secrets `E2E_AUTH_B64` (tar.gz base64 del
+  auth state) y el input `target`. Sin secrets, el smoke termina sin hacer nada.
+- `docs/protocol-sync/status.md` lo genera `scripts/protocol-status.mjs` y se
+  incluye en el PR de protocolo.
+
+Los PRs automáticos los crea `GITHUB_TOKEN`, así que no disparan los workflows
+de CI por sí mismos; por eso cada workflow corre lint/tests antes de abrirlos.

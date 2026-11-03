@@ -27,3 +27,6 @@ test.ts
 TestData
 wa-logs*
 coverage.proto-test-*/
+.e2e-auth/
+feature-watch.txt
+issue-body.md
