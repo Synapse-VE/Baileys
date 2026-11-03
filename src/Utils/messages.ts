@@ -771,10 +771,16 @@ export const generateWAMessage = async (jid: string, content: AnyMessageContent,
 }
 
 /** Get the key to access the true type of content */
+const NON_SUFFIX_CONTENT_KEYS = new Set(['groupRootKeyShare', 'statusLinkPreviewMetadata'])
+
 export const getContentType = (content: proto.IMessage | undefined) => {
 	if (content) {
 		const keys = Object.keys(content)
-		const key = keys.find(k => (k === 'conversation' || k.includes('Message')) && k !== 'senderKeyDistributionMessage')
+		const key = keys.find(
+			k =>
+				(k === 'conversation' || k.includes('Message') || NON_SUFFIX_CONTENT_KEYS.has(k)) &&
+				k !== 'senderKeyDistributionMessage'
+		)
 		return key as keyof typeof content
 	}
 }
@@ -812,7 +818,11 @@ export const normalizeMessageContent = (content: WAMessageContent | null | undef
 			message?.editedMessage ||
 			message?.associatedChildMessage ||
 			message?.groupStatusMessage ||
-			message?.groupStatusMessageV2
+			message?.groupStatusMessageV2 ||
+			message?.spoilerMessage ||
+			message?.newsletterScheduledMessage ||
+			message?.acp2SettingMessage ||
+			message?.audioStickerMessage
 		)
 	}
 }
@@ -842,6 +852,10 @@ export const extractMessageContent = (content: WAMessageContent | undefined | nu
 	}
 
 	content = normalizeMessageContent(content)
+
+	if (content?.instantImageMessage) {
+		return { imageMessage: content.instantImageMessage }
+	}
 
 	if (content?.buttonsMessage) {
 		return extractFromTemplateMessage(content.buttonsMessage)
@@ -941,6 +955,7 @@ export function getAggregateVotesInPollMessage(
 		message?.pollCreationMessage?.options ||
 		message?.pollCreationMessageV2?.options ||
 		message?.pollCreationMessageV3?.options ||
+		message?.pollCreationMessageV6?.options ||
 		[]
 	const voteHashMap = opts.reduce(
 		(acc, opt) => {

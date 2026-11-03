@@ -1163,6 +1163,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 			normalizedMessage.pollCreationMessage ||
 			normalizedMessage.pollCreationMessageV2 ||
 			normalizedMessage.pollCreationMessageV3 ||
+			normalizedMessage.pollCreationMessageV6 ||
 			normalizedMessage.pollUpdateMessage
 		) {
 			return 'poll'
@@ -1180,7 +1181,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 	}
 
 	const getMediaType = (message: proto.IMessage) => {
-		if (message.imageMessage) {
+		if (message.imageMessage || message.instantImageMessage) {
 			return 'image'
 		} else if (message.videoMessage) {
 			return message.videoMessage.gifPlayback ? 'gif' : 'video'
