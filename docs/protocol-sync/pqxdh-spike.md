@@ -60,3 +60,31 @@ Si WhatsApp exige PQXDH, el spike pasa a P0.
   el flujo de usuario habitual. Feature futura.
 - **cstoken/NCT (#2438)**: token de privacidad 1:1; Baileys ya emite TC tokens.
   El PR upstream es enorme (7.7k/3.3k) y no está liberado. Vigilar errores 463.
+
+## Resultado del spike (2026-11-03)
+
+Se instaló `@signalapp/libsignal-client@0.106.1` en un sandbox
+(`.tools/pq-spike`, fuera del paquete) y se inspeccionó su API:
+
+- Expone `KyberPreKeyRecord`, `KyberPreKeyStore`, `KEMKeyPair`,
+  `KEMPublicKey` y `KEMSecretKey`.
+- `PreKeyBundle.new(...)` acepta `kyber_prekey_id`, `kyber_prekey` y
+  `kyber_prekey_signature`; `signalDecryptPreKey` recibe un
+  `KyberPreKeyStore`. Es decir, PQXDH está implementado de punta a punta.
+- Prueba ejecutada: `KEMKeyPair.generate()` produce una clave pública de
+  1569 bytes; `KyberPreKeyRecord.new(7, ...)` serializa en 4821 bytes.
+
+**Bloqueante de licencia**: el paquete declara `AGPL-3.0-only`. Nuestro fork
+es MIT y se publica como librería; integrar AGPL obligaría a relicenciar el
+paquete y a imponer AGPL a todos los consumidores. Eso no es aceptable para
+este fork.
+
+Conclusión actualizada:
+
+1. No integrar `@signalapp/libsignal-client` en el paquete MIT.
+2. Si WhatsApp exige PQXDH, la vía viable es implementar Kyber con una
+   librería permisiva (`mlkem`, `@noble/post-quantum`) sobre los vectores de
+   prueba de Signal, con auditoría; o mantener un backend opcional AGPL que
+   el consumidor instale por su cuenta y acepte la licencia.
+3. Mientras tanto: monitorizar con `feature-watch` y no tocar el flujo
+   clásico, que hoy funciona.
