@@ -1,15 +1,16 @@
 {
-  "name": "baileys",
+  "name": "@synapse-ve/baileys",
   "type": "module",
-  "version": "7.0.0-rc14",
-  "description": "A WebSockets library for interacting with WhatsApp Web",
+  "version": "7.0.0-rc14.sync.2",
+  "description": "Independent Baileys fork for WhatsApp Web, maintained by Synapse-VE",
   "keywords": [
     "whatsapp",
     "automation"
   ],
-  "homepage": "https://github.com/WhiskeySockets/Baileys/",
+  "homepage": "https://github.com/Synapse-VE/Baileys#readme",
   "repository": {
-    "url": "git@github.com:WhiskeySockets/Baileys.git"
+    "type": "git",
+    "url": "git+https://github.com/Synapse-VE/Baileys.git"
   },
   "license": "MIT",
   "author": "Rajeh Taher",
@@ -138,5 +139,12 @@
   "packageManager": "yarn@4.9.2",
   "engines": {
     "node": ">=20.0.0"
+  },
+  "bugs": {
+    "url": "https://github.com/Synapse-VE/Baileys/issues"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "public"
   }
 }

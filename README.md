@@ -1,3 +1,11 @@
+> **Fork independiente de Synapse-VE.** Este paquete se publica como `@synapse-ve/baileys` en GitHub Packages y no depende de WhiskeySockets para versiones ni para el esquema de WhatsApp. Instalación:
+>
+> ```bash
+> npm install @synapse-ve/baileys --registry=https://npm.pkg.github.com
+> ```
+>
+> El registro de GitHub Packages requiere un token con `read:packages` en el `.npmrc` del proyecto.
+
 <h1 align='center'><img alt="Baileys logo" src="https://raw.githubusercontent.com/WhiskeySockets/Baileys/refs/heads/master/Media/logo.png" height="75"/></h1>
 
 <div align='center'>Baileys is a WebSockets-based TypeScript library for interacting with the WhatsApp Web API.</div>
@@ -56,7 +64,7 @@ To run the example script, download or clone the repo and then type the followin
 
 Use the stable version:
 ```
-yarn add @whiskeysockets/baileys
+yarn add @synapse-ve/baileys
 ```
 
 Use the edge version (no guarantee of stability, but latest fixes + features)
@@ -66,7 +74,7 @@ yarn add github:WhiskeySockets/Baileys
 
 Then import your code using:
 ```ts
-import makeWASocket from '@whiskeysockets/baileys'
+import makeWASocket from '@synapse-ve/baileys'
 ```
 
 # Links
@@ -195,7 +203,7 @@ WhatsApp provides a multi-device API that allows Baileys to be authenticated as 
 > You can customize browser name if you connect with **QR-CODE**, with `Browser` constant, we have some browsers config, **see the [BrowsersMap type alias](https://baileys.wiki/docs/api/type-aliases/BrowsersMap/)**
 
 ```ts
-import makeWASocket from '@whiskeysockets/baileys'
+import makeWASocket from '@synapse-ve/baileys'
 
 const sock = makeWASocket({
     // can provide additional config here
@@ -215,7 +223,7 @@ If the connection is successful, you will see a QR code printed on your terminal
 The phone number can't have `+` or `()` or `-`, only numbers, you must provide country code
 
 ```ts
-import makeWASocket from '@whiskeysockets/baileys'
+import makeWASocket from '@synapse-ve/baileys'
 
 const sock = makeWASocket({
     // can provide additional config here
@@ -288,7 +296,7 @@ You obviously don't want to keep scanning the QR code every time you want to con
 
 So, you can load the credentials to log back in:
 ```ts
-import makeWASocket, { useMultiFileAuthState } from '@whiskeysockets/baileys'
+import makeWASocket, { useMultiFileAuthState } from '@synapse-ve/baileys'
 
 const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys')
 
@@ -331,7 +339,7 @@ sock.ev.on('messages.upsert', ({ messages }) => {
 > For reliable serialization of the authentication state, especially when storing as JSON, always use the BufferJSON utility.
 
 ```ts
-import makeWASocket, { DisconnectReason, useMultiFileAuthState } from '@whiskeysockets/baileys'
+import makeWASocket, { DisconnectReason, useMultiFileAuthState } from '@synapse-ve/baileys'
 import { Boom } from '@hapi/boom'
 
 async function connectToWhatsApp () {
@@ -413,7 +421,7 @@ sock.ev.on('messages.update', event => {
 It can be used as follows:
 
 ```ts
-import makeWASocket, { makeInMemoryStore } from '@whiskeysockets/baileys'
+import makeWASocket, { makeInMemoryStore } from '@synapse-ve/baileys'
 // the store maintains the data of the WA connection in memory
 // can be written out to a file & read from it
 const store = makeInMemoryStore({ })
@@ -729,7 +737,7 @@ await sock.sendMessage(jid, {
 If you want to save the media you received
 ```ts
 import { createWriteStream } from 'fs'
-import { downloadMediaMessage, getContentType } from '@whiskeysockets/baileys'
+import { downloadMediaMessage, getContentType } from '@synapse-ve/baileys'
 
 sock.ev.on('messages.upsert', async ({ [m] }) => {
     if (!m.message) return // if there is no text or media message
