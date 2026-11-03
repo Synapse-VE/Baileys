@@ -7,7 +7,7 @@ on:
   pull_request:
 
 jobs:
-  run-tests:
+  test:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
@@ -44,3 +44,9 @@ jobs:
 
       - name: Run tests
         run: yarn test
+  run-tests:
+    name: run-tests
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "All Node.js matrix legs passed"
