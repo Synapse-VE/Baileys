@@ -1,5 +1,6 @@
 .DS_Store
-.env
+.env*
+!.env.example
 .yarn/
 *.tgz
 */.DS_Store
@@ -15,6 +16,8 @@ docs/*
 !docs/index.html
 !docs/404.html
 !docs/.nojekyll
+!docs/protocol-sync/
+!docs/protocol-sync/**
 lib
 messages*.json
 node_modules
