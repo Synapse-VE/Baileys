@@ -152,3 +152,21 @@ describe('event-buffer', () => {
 		})
 	})
 })
+
+describe('messages.update buffering', () => {
+	it('preserves the message timestamp when absorbing a receipt update', () => {
+		const ev = makeEventBuffer(makeTestLogger())
+		const received: any[] = []
+		const key = { remoteJid: '1234567890@s.whatsapp.net', id: 'message-id', fromMe: false }
+
+		ev.on('messages.upsert', data => received.push(data))
+		ev.buffer()
+		ev.emit('messages.update', [{ key, update: { status: 2, messageTimestamp: 200 } }])
+		ev.emit('messages.upsert', { messages: [{ key, messageTimestamp: 100 }], type: 'append' })
+		ev.flush()
+
+		expect(received).toHaveLength(1)
+		expect(received[0]!.messages[0]).toMatchObject({ messageTimestamp: 100, status: 2 })
+		ev.destroy()
+	})
+})
