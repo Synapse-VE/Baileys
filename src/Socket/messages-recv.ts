@@ -1696,6 +1696,16 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 						await sendMessageAck(node)
 						// Don't return — fall through to upsertMessage so the stub is emitted
 					} else {
+						// A retry receipt only makes sense for someone else's message. An
+						// undecryptable fromMe message is our own echo, encrypted under the
+						// originating device's session; asking for a resend makes the server
+						// tear the stream down with <stream:error><ack/>.
+						if (msg.key.fromMe) {
+							logger.debug({ key: msg.key }, 'undecryptable fromMe message: acking without a retry receipt')
+							acked = true
+							return sendMessageAck(node)
+						}
+
 						// Skip retry for expired status messages (>24h old)
 						if (isJidStatusBroadcast(msg.key.remoteJid!)) {
 							const messageAge = unixTimestampSeconds() - toNumber(msg.messageTimestamp)
