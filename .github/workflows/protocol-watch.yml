@@ -61,9 +61,10 @@ jobs:
           yarn test
 
       - name: Open pull request
+        id: cpr
         uses: peter-evans/create-pull-request@v6
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.AUTOMATION_TOKEN || secrets.GITHUB_TOKEN }}
           branch: update/protocol
           delete-branch: true
           title: 'chore(protocol): sync WhatsApp schema'
@@ -78,10 +79,16 @@ jobs:
 
             The workflow already ran lint, tests and the proto regression suite.
 
+      - name: Enable auto-merge
+        if: steps.cpr.outputs.pull-request-number != ''
+        env:
+          GH_TOKEN: ${{ secrets.AUTOMATION_TOKEN || secrets.GITHUB_TOKEN }}
+        run: gh pr merge --auto --squash "${{ steps.cpr.outputs.pull-request-number }}"
+
       - name: Open an issue when the refresh fails
         if: failure()
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.AUTOMATION_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           gh issue create \
             --title "Protocol watch failed" \

@@ -61,9 +61,9 @@ Si falla el último punto, regenerar y commitear el resultado.
 
 - `protocol-watch` (diario, 03:15 UTC): extrae el proto, aplica la capa de
   compatibilidad, actualiza la versión, regenera estáticos y corre lint/tests.
-  Si hay cambios abre el PR `update/protocol`; si falla, abre un issue.
-- `version-watch` (diario, 03:45 UTC): solo bumpea la versión anunciada y abre
-  el PR `update/version`.
+  Si hay cambios abre el PR `update/protocol` y activa auto-merge; si falla,
+  abre un issue. Un solo workflow reemplaza al viejo `version-watch` para que
+  la versión y el esquema viajen juntos en un único PR atómico.
 - `feature-watch` (diario, 05:15 UTC): descarga el bundle y cuenta los campos
   del handshake post-cuantico. Si pasan de definición a uso real, abre un issue.
 - `e2e-live` (manual): requiere los secrets `E2E_AUTH_B64` (tar.gz base64 del
