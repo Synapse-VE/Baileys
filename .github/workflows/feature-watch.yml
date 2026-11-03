@@ -19,7 +19,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20.x
+          node-version: '24.22.1'
 
       - name: Scan the live bundle
         id: scan
