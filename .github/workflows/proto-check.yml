@@ -2,13 +2,6 @@ name: Proto Pipeline
 
 on:
   pull_request:
-    paths:
-      - 'WAProto/**'
-      - 'proto-extract/**'
-      - 'scripts/**'
-      - 'package.json'
-      - 'yarn.lock'
-      - '.github/workflows/proto-check.yml'
 
 jobs:
   proto-check:
