@@ -2,6 +2,7 @@ const request = require('request-promise-native');
 const acorn = require('acorn');
 const walk = require('acorn-walk');
 const fs = require('fs/promises');
+const { fieldLabel } = require('./field-labels');
 
 let whatsAppVersion = 'latest';
 
@@ -294,7 +295,10 @@ async function findAppModules() {
                     }
                   }
                 } else if (m.object.property.name === 'FLAGS') {
-                  flags.push(m.property.name.toLowerCase());
+                  const label = fieldLabel(m.property.name);
+                  if (label) {
+                    flags.push(label);
+                  }
                 }
               }
             });
