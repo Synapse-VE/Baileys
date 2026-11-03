@@ -37,7 +37,7 @@ jobs:
           yarn test
 
       - name: Publish to GitHub Packages
-        run: npm publish
+        run: npm publish --tag latest
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
