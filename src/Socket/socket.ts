@@ -43,6 +43,7 @@ import {
 	makeNoiseHandler,
 	promiseTimeout,
 	scheduleInitialBufferFlush,
+	shouldUseRegistrationNode,
 	signedKeyPair,
 	xmppSignedPreKey
 } from '../Utils'
@@ -450,11 +451,12 @@ export const makeSocket = (config: SocketConfig) => {
 		const keyEnc = noise.processHandshake(handshake, creds.noiseKey)
 
 		let node: proto.IClientPayload
-		if (!creds.me) {
+		if (shouldUseRegistrationNode(creds)) {
 			node = generateRegistrationNode(creds, config)
 			logger.info({ node }, 'not logged in, attempting registration...')
 		} else {
-			node = generateLoginNode(creds.me.id, config)
+			// shouldUseRegistrationNode only returns false when creds.me exists
+			node = generateLoginNode(creds.me!.id, config)
 			logger.info({ node }, 'logging in...')
 		}
 
@@ -818,7 +820,7 @@ export const makeSocket = (config: SocketConfig) => {
 						{
 							tag: 'link_code_pairing_nonce',
 							attrs: {},
-							content: '0'
+							content: Buffer.alloc(1)
 						}
 					]
 				}
