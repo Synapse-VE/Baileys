@@ -1,5 +1,6 @@
 import { proto } from '../../../WAProto/index.js'
-import { processHistoryMessage } from '../../Utils/history'
+import Long from 'long'
+import { normalizeHistoryTimestamp, processHistoryMessage } from '../../Utils/history'
 
 describe('processHistoryMessage', () => {
 	describe('phoneNumberToLidMappings extraction', () => {
@@ -428,5 +429,21 @@ describe('processHistoryMessage', () => {
 
 			expect(result.pastParticipants).toEqual(pastParticipants)
 		})
+	})
+})
+
+describe('normalizeHistoryTimestamp', () => {
+	it('converts milliseconds to seconds for on-demand history', () => {
+		expect(normalizeHistoryTimestamp(1_700_000_000_000)).toBe(1_700_000_000)
+		expect(normalizeHistoryTimestamp(Long.fromNumber(1_700_000_000_000))).toBe(1_700_000_000)
+	})
+
+	it('keeps second timestamps untouched', () => {
+		expect(normalizeHistoryTimestamp(1_700_000_000)).toBe(1_700_000_000)
+	})
+
+	it('handles missing timestamps', () => {
+		expect(normalizeHistoryTimestamp(undefined)).toBeUndefined()
+		expect(normalizeHistoryTimestamp(null)).toBeUndefined()
 	})
 })
