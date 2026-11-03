@@ -89,11 +89,17 @@ export function shouldSendNewTcToken(senderTimestamp: number | undefined): boole
 /** Resolve JID to LID for tctoken storage (WA Web stores under LID) */
 export async function resolveTcTokenJid(
 	jid: string,
-	getLIDForPN: (pn: string) => Promise<string | null>
+	getLIDForPN: (pn: string) => Promise<string | null>,
+	logger?: { debug: (obj: Record<string, unknown>, msg: string) => void }
 ): Promise<string> {
 	if (isLidUser(jid)) return jid
-	const lid = await getLIDForPN(jid)
-	return lid ?? jid
+	try {
+		const lid = await getLIDForPN(jid)
+		return lid ?? jid
+	} catch (error) {
+		logger?.debug({ jid, err: (error as Error)?.message }, 'failed to resolve TcToken JID')
+		return jid
+	}
 }
 
 /** Resolve target JID for issuing privacy token based on AB prop 14303 */
@@ -101,21 +107,27 @@ export async function resolveIssuanceJid(
 	jid: string,
 	issueToLid: boolean,
 	getLIDForPN: (pn: string) => Promise<string | null>,
-	getPNForLID?: (lid: string) => Promise<string | null>
+	getPNForLID?: (lid: string) => Promise<string | null>,
+	logger?: { debug: (obj: Record<string, unknown>, msg: string) => void }
 ): Promise<string> {
-	if (issueToLid) {
-		if (isLidUser(jid)) return jid
-		const lid = await getLIDForPN(jid)
-		return lid ?? jid
-	}
+	try {
+		if (issueToLid) {
+			if (isLidUser(jid)) return jid
+			const lid = await getLIDForPN(jid)
+			return lid ?? jid
+		}
 
-	if (!isLidUser(jid)) return jid
-	if (getPNForLID) {
-		const pn = await getPNForLID(jid)
-		return pn ?? jid
-	}
+		if (!isLidUser(jid)) return jid
+		if (getPNForLID) {
+			const pn = await getPNForLID(jid)
+			return pn ?? jid
+		}
 
-	return jid
+		return jid
+	} catch (error) {
+		logger?.debug({ jid, err: (error as Error)?.message }, 'failed to resolve issuance JID')
+		return jid
+	}
 }
 
 type TcTokenParams = {
