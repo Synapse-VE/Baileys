@@ -1,0 +1,42 @@
+name: Proto Pipeline
+
+on:
+  pull_request:
+    paths:
+      - 'WAProto/**'
+      - 'proto-extract/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'yarn.lock'
+      - '.github/workflows/proto-check.yml'
+
+jobs:
+  proto-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install packages
+        run: yarn install --immutable
+
+      - name: Regression tests
+        run: yarn test:proto
+
+      - name: Generate statics from the repository root
+        run: yarn gen:protobuf
+
+      - name: Reject proto3-invalid required fields
+        run: |
+          if grep -nE '^[[:space:]]*required ' WAProto/WAProto.proto; then
+            echo "WAProto.proto contains 'required', which is invalid in proto3"
+            exit 1
+          fi
