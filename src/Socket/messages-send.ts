@@ -70,6 +70,45 @@ import {
 import { USyncQuery, USyncUser } from '../WAUSync'
 import { makeNewsletterSocket } from './newsletter'
 
+export const getMediaType = (message: proto.IMessage) => {
+	if (message.imageMessage || message.instantImageMessage) {
+		return 'image'
+	} else if (message.videoMessage) {
+		return message.videoMessage.gifPlayback ? 'gif' : 'video'
+	} else if (message.audioMessage) {
+		return message.audioMessage.ptt ? 'ptt' : 'audio'
+	} else if (message.contactMessage) {
+		return 'vcard'
+	} else if (message.documentMessage) {
+		return 'document'
+	} else if (message.contactsArrayMessage) {
+		return 'contact_array'
+	} else if (message.liveLocationMessage) {
+		return 'livelocation'
+	} else if (message.stickerMessage) {
+		return 'sticker'
+	} else if (message.listMessage) {
+		return 'list'
+	} else if (message.listResponseMessage) {
+		return 'list_response'
+	} else if (message.buttonsResponseMessage) {
+		return 'buttons_response'
+	} else if (message.orderMessage) {
+		return 'order'
+	} else if (message.productMessage) {
+		return 'product'
+	} else if (message.interactiveResponseMessage) {
+		return 'native_flow_response'
+	} else if (message.groupInviteMessage) {
+		return 'url'
+	}
+
+	return ''
+}
+
+export const getNormalizedMediaType = (message: proto.IMessage) =>
+	getMediaType(normalizeMessageContent(message) || message)
+
 export const makeMessagesSocket = (config: SocketConfig) => {
 	const {
 		logger,
@@ -674,7 +713,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 		}
 
 		await authState.keys.transaction(async () => {
-			const mediaType = getMediaType(message)
+			const mediaType = getNormalizedMediaType(message)
 			if (mediaType) {
 				extraAttrs['mediatype'] = mediaType
 			}
@@ -1178,42 +1217,6 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 		}
 
 		return 'text'
-	}
-
-	const getMediaType = (message: proto.IMessage) => {
-		if (message.imageMessage || message.instantImageMessage) {
-			return 'image'
-		} else if (message.videoMessage) {
-			return message.videoMessage.gifPlayback ? 'gif' : 'video'
-		} else if (message.audioMessage) {
-			return message.audioMessage.ptt ? 'ptt' : 'audio'
-		} else if (message.contactMessage) {
-			return 'vcard'
-		} else if (message.documentMessage) {
-			return 'document'
-		} else if (message.contactsArrayMessage) {
-			return 'contact_array'
-		} else if (message.liveLocationMessage) {
-			return 'livelocation'
-		} else if (message.stickerMessage) {
-			return 'sticker'
-		} else if (message.listMessage) {
-			return 'list'
-		} else if (message.listResponseMessage) {
-			return 'list_response'
-		} else if (message.buttonsResponseMessage) {
-			return 'buttons_response'
-		} else if (message.orderMessage) {
-			return 'order'
-		} else if (message.productMessage) {
-			return 'product'
-		} else if (message.interactiveResponseMessage) {
-			return 'native_flow_response'
-		} else if (message.groupInviteMessage) {
-			return 'url'
-		}
-
-		return ''
 	}
 
 	const issuePrivacyTokens = async (jids: string[], timestamp?: number) => {
