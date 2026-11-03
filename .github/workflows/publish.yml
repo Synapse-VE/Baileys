@@ -19,7 +19,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20.x
+          node-version: '24.22.1'
           registry-url: 'https://npm.pkg.github.com'
           scope: '@synapse-ve'
 
@@ -38,6 +38,19 @@ jobs:
         run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Smoke the published package
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          for attempt in 1 2 3 4 5; do
+            if npm install --prefix .pkg-smoke "@synapse-ve/baileys@${VERSION}" --no-fund --no-audit; then
+              break
+            fi
+            sleep 15
+          done
+          node --input-type=module -e "import('./.pkg-smoke/node_modules/@synapse-ve/baileys/lib/index.js').then(m => { if (typeof m.makeWASocket !== 'function') throw new Error('makeWASocket missing') })"
 
       - name: Create GitHub release
         run: gh release create "$GITHUB_REF_NAME" --generate-notes --title "$GITHUB_REF_NAME"
