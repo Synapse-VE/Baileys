@@ -56,6 +56,7 @@ import { normalizeHistoryTimestamp } from '../Utils/history'
 import { makeMutex } from '../Utils/make-mutex'
 import { isOfflineAttr } from '../Utils/offline'
 import { makeOfflineNodeProcessor, type MessageType } from '../Utils/offline-node-processor'
+import { isCompanionRegReady } from '../Utils/pairing'
 import { getReceiptTimestampField } from '../Utils/receipts'
 import { buildAckStanza } from '../Utils/stanza-ack'
 import {
@@ -1130,8 +1131,10 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 				}
 
 				break
-			case 'link_code_companion_reg':
+			case 'link_code_companion_reg': {
 				const linkCodeCompanionReg = getBinaryNodeChild(node, 'link_code_companion_reg')
+				// the first notification has no crypto fields; only the primary_hello one is usable
+				if (!isCompanionRegReady(linkCodeCompanionReg?.attrs?.stage)) break
 				const ref = toRequiredBuffer(getBinaryNodeChildBuffer(linkCodeCompanionReg, 'link_code_pairing_ref'))
 				const primaryIdentityPublicKey = toRequiredBuffer(
 					getBinaryNodeChildBuffer(linkCodeCompanionReg, 'primary_identity_pub')
@@ -1199,6 +1202,8 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 				authState.creds.registered = true
 				ev.emit('creds.update', authState.creds)
 				break
+			}
+
 			case 'privacy_token':
 				await handlePrivacyTokenNotification(node)
 				break
