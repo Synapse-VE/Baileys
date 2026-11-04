@@ -45,3 +45,13 @@ El token necesita `read:packages`.
 - Tras publicar, la versión aparece en la pestaña Packages del repositorio.
 - Si el workflow falla, el tag queda creado igual: corregir y publicar una
   versión nueva en lugar de reutilizar el tag.
+
+## Política de releases (A + D)
+
+- Los tags con guion (`-rc`, `-sync`) crean un GitHub Release **prerelease**.
+  No se marcan como Latest: GitHub no permite que un prerelease sea Latest.
+- Un tag estable (`vX.Y.Z`, sin guion) crea el release con `--latest`.
+- El `latest` del paquete en GitHub Packages es independiente y lo mueve
+  `npm publish --tag latest`; los prereleases del repositorio no lo afectan.
+- Por eso, mientras la línea sea `v7.0.0-rc14.sync.N`, la página de Releases
+  no muestra un “Latest”; el primer `v7.0.0` estable lo hará.
