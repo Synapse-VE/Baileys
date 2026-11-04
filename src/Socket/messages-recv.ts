@@ -58,6 +58,7 @@ import { isOfflineAttr } from '../Utils/offline'
 import { makeOfflineNodeProcessor, type MessageType } from '../Utils/offline-node-processor'
 import { isCompanionRegReady } from '../Utils/pairing'
 import { getReceiptTimestampField } from '../Utils/receipts'
+import { nextRetryCount, shouldRetryMessage } from '../Utils/retry-cache'
 import { buildAckStanza } from '../Utils/stanza-ack'
 import {
 	buildMergedTcTokenIndexWrite,
@@ -598,7 +599,13 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		} else {
 			// Fallback to old system
 			const key = `${msgId}:${msgKey?.participant}`
-			let retryCount = (await msgRetryCache.get<number>(key)) || 0
+			const cachedRetryCount = await msgRetryCache.get<number | null>(key)
+			if (cachedRetryCount === null) {
+				logger.debug({ msgId }, 'retry suppressed by the cache')
+				return
+			}
+
+			let retryCount = cachedRetryCount ?? 0
 			if (retryCount >= maxMsgRetryCount) {
 				logger.debug({ retryCount, msgId }, 'reached retry limit, clearing')
 				await msgRetryCache.del(key)
@@ -1330,13 +1337,22 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 
 	const willSendMessageAgain = async (id: string, participant: string) => {
 		const key = `${id}:${participant}`
-		const retryCount = (await msgRetryCache.get<number>(key)) || 0
-		return retryCount < maxMsgRetryCount
+		const cachedRetryCount = await msgRetryCache.get<number | null>(key)
+		return shouldRetryMessage(cachedRetryCount, maxMsgRetryCount)
 	}
 
 	const updateSendMessageAgainCount = async (id: string, participant: string) => {
 		const key = `${id}:${participant}`
-		const newValue = ((await msgRetryCache.get<number>(key)) || 0) + 1
+		const cachedRetryCount = await msgRetryCache.get<number | null>(key)
+		if (cachedRetryCount === null) {
+			return
+		}
+
+		const newValue = nextRetryCount(cachedRetryCount)
+		if (newValue === null) {
+			return
+		}
+
 		await msgRetryCache.set(key, newValue)
 	}
 
