@@ -146,6 +146,13 @@ export type SocketConfig = {
 	 * */
 	getMessage: (key: WAMessageKey) => Promise<proto.IMessage | undefined>
 
+	/**
+	 * Re-offer stored pre-keys instead of minting new ones when the server pool
+	 * is low and the local store already holds many keys. Defaults to true;
+	 * accounts with fewer than 100 minted keys keep the classic path.
+	 */
+	reofferPreKeys?: boolean
+
 	/** cached group metadata, use to prevent redundant requests to WA & speed up msg sending */
 	cachedGroupMetadata: (jid: string) => Promise<GroupMetadata | undefined>
 

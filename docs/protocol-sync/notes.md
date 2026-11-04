@@ -77,8 +77,10 @@ Si falla el último punto, regenerar y commitear el resultado.
 Los PRs automáticos los crea `GITHUB_TOKEN`, así que no disparan los workflows
 de CI por sí mismos; por eso cada workflow corre lint/tests antes de abrirlos.
 
-- `getMintedPreKeyCount` y un warning único por socket avisan cuando el store
-  local de pre-keys supera 1.000 ids. No es un fix de #2797: reclamar claves
-  exige saber qué ids sigue ofreciendo el servidor, y el protocolo solo
-  reporta el conteo. El monitoreo permite detectar el crecimiento y migrar a
-  un store que pueda reconciliar.
+- `reofferPreKeys` (activo por defecto cuando el store ya superó 100 keys):
+  si el pool del servidor baja, reenvía las pre-keys que el cliente todavía
+  tiene en vez de minar nuevas. El IQ de upload **reemplaza** el pool, así que
+  los ids y el material existentes vuelven a quedar disponibles sin cambiar
+  `nextPreKeyId`; si el reenvío falla, se cae al camino clásico de minado.
+  `getMintedPreKeyCount` sigue emitiendo un warning por socket para detectar
+  cuentas que ya crecieron de más.

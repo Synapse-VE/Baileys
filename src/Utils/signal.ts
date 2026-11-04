@@ -271,3 +271,24 @@ export const getPreKeyTopUpCount = (serverCount: number, initialCount: number, m
 
 /** Number of pre-key ids the account has minted so far, consumed or not. */
 export const getMintedPreKeyCount = (creds: { nextPreKeyId?: number }) => Math.max(0, (creds.nextPreKeyId ?? 0) - 1)
+
+/**
+ * Re-offering stored pre-keys is safe: the upload replaces the server's pool
+ * with the same key material, and consumed keys are already absent from the
+ * store. Do it only for accounts whose local store already grew past the
+ * threshold, so new accounts keep the classic mint path. A failed re-offer
+ * falls back to minting.
+ */
+export const shouldReofferPreKeys = ({
+	enabled,
+	minted,
+	serverCount,
+	topUpCount,
+	missingCurrentPreKey
+}: {
+	enabled: boolean
+	minted: number
+	serverCount: number
+	topUpCount: number
+	missingCurrentPreKey: boolean
+}) => enabled && !missingCurrentPreKey && serverCount > 0 && serverCount <= topUpCount && minted > 100

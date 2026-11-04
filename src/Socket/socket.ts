@@ -7,6 +7,7 @@ import {
 	DEF_CALLBACK_PREFIX,
 	DEF_TAG_PREFIX,
 	INITIAL_PREKEY_COUNT,
+	KEY_BUNDLE_TYPE,
 	MIN_PREKEY_COUNT,
 	NOISE_WA_HEADER,
 	PROCESSABLE_HISTORY_TYPES,
@@ -31,6 +32,7 @@ import {
 	configureSuccessfulPairing,
 	Curve,
 	derivePairingCodeKey,
+	encodeBigEndian,
 	generateLoginNode,
 	generateMdTagPrefix,
 	generateRegistrationNode,
@@ -45,8 +47,10 @@ import {
 	makeNoiseHandler,
 	promiseTimeout,
 	scheduleInitialBufferFlush,
+	shouldReofferPreKeys,
 	shouldUseRegistrationNode,
 	signedKeyPair,
+	xmppPreKey,
 	xmppSignedPreKey
 } from '../Utils'
 import {
@@ -494,6 +498,60 @@ export const makeSocket = (config: SocketConfig) => {
 	let uploadPreKeysPromise: Promise<void> | null = null
 
 	/** generates and uploads a set of pre-keys to the server */
+
+	/**
+	 * Upload stored pre-keys as the server's pool. The encrypt IQ replaces the
+	 * pool rather than appending, so the same ids/keys can be re-offered without
+	 * minting new material or changing the local counters.
+	 */
+	const uploadPreKeysFromStore = async (count: number) => {
+		const collected: number[] = []
+		let cursor = authState.creds.nextPreKeyId - 1
+		while (cursor > 0 && collected.length < count) {
+			const batch: number[] = []
+			for (let i = 0; i < 50 && cursor > 0 && collected.length + batch.length < count; i++, cursor--) {
+				batch.push(cursor)
+			}
+
+			const data = await authState.keys.get('pre-key', batch.map(String))
+			for (const id of batch) {
+				if (data[String(id)]) {
+					collected.push(id)
+				}
+			}
+		}
+
+		if (!collected.length) {
+			return false
+		}
+
+		const data = await authState.keys.get('pre-key', collected.map(String))
+		const ids = collected.filter(id => data[String(id)])
+		if (!ids.length) {
+			return false
+		}
+
+		await query({
+			tag: 'iq',
+			attrs: {
+				id: generateMessageTag(),
+				xmlns: 'encrypt',
+				type: 'set',
+				to: S_WHATSAPP_NET
+			},
+			content: [
+				{ tag: 'registration', attrs: {}, content: encodeBigEndian(authState.creds.registrationId) },
+				{ tag: 'type', attrs: {}, content: KEY_BUNDLE_TYPE },
+				{ tag: 'identity', attrs: {}, content: authState.creds.signedIdentityKey.public },
+				{ tag: 'list', attrs: {}, content: ids.map(id => xmppPreKey(data[String(id)]!, id)) },
+				xmppSignedPreKey(authState.creds.signedPreKey)
+			]
+		})
+
+		logger.info({ reoffered: ids.length }, 're-offered stored pre-keys to the server')
+		return true
+	}
+
 	const uploadPreKeys = async (count = MIN_PREKEY_COUNT) => {
 		if (uploadPreKeysPromise) {
 			logger.debug('Pre-key upload already in progress, waiting for completion')
@@ -584,6 +642,26 @@ export const makeSocket = (config: SocketConfig) => {
 			const shouldUpload = lowServerCount || missingCurrentPreKey
 
 			if (shouldUpload) {
+				let reoffered = false
+				if (
+					shouldReofferPreKeys({
+						enabled: config.reofferPreKeys !== false,
+						minted: getMintedPreKeyCount(authState.creds),
+						serverCount: preKeyCount,
+						topUpCount: count,
+						missingCurrentPreKey
+					})
+				) {
+					reoffered = await uploadPreKeysFromStore(count).catch(error => {
+						logger.warn({ err: error }, 'failed to re-offer stored pre-keys, minting instead')
+						return false
+					})
+				}
+
+				if (reoffered) {
+					return
+				}
+
 				const reasons = []
 				if (lowServerCount) reasons.push(`server count low (${preKeyCount})`)
 				if (missingCurrentPreKey) reasons.push(`current prekey ${currentPreKeyId} missing from storage`)
