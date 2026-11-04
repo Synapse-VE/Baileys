@@ -1,7 +1,7 @@
 {
   "name": "@synapse-ve/baileys",
   "type": "module",
-  "version": "7.0.0-rc14.sync.24",
+  "version": "7.0.0-rc14.sync.25",
   "description": "Independent Baileys fork for WhatsApp Web, maintained by Synapse-VE",
   "keywords": [
     "whatsapp",
@@ -155,7 +155,7 @@
     "url": "https://github.com/Synapse-VE/Baileys/issues"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com",
+    "registry": "https://registry.npmjs.org",
     "access": "public"
   }
 }

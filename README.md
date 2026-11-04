@@ -1,10 +1,10 @@
-> **Fork independiente de Synapse-VE.** Este paquete se publica como `@synapse-ve/baileys` en GitHub Packages y no depende de WhiskeySockets para versiones ni para el esquema de WhatsApp. Instalación:
+> **Fork independiente de Synapse-VE.** Este paquete se publica como `@synapse-ve/baileys` en **npmjs.com** y no depende de WhiskeySockets para versiones ni para el esquema de WhatsApp. Instalación pública, sin token:
 >
 > ```bash
-> npm install @synapse-ve/baileys --registry=https://npm.pkg.github.com
+> npm install @synapse-ve/baileys
 > ```
 >
-> El registro de GitHub Packages requiere un token con `read:packages` en el `.npmrc` del proyecto.
+> Para una versión prerelease concreta: `npm install @synapse-ve/baileys@next` o `@7.0.0-rc14.sync.25`.
 
 <h1 align='center'><img alt="Baileys logo" src="https://raw.githubusercontent.com/WhiskeySockets/Baileys/refs/heads/master/Media/logo.png" height="75"/></h1>
 
