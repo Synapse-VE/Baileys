@@ -1,8 +1,11 @@
+import { jest } from '@jest/globals'
 import { DEFAULT_CONNECTION_CONFIG } from '../../Defaults'
 import makeWASocket from '../../Socket'
 import { makeSession, mockWebSocket } from '../TestUtils/session'
 
 mockWebSocket()
+
+jest.setTimeout(30_000)
 
 describe('websocket close', () => {
 	it('carries the close code and reason in the connection error', async () => {

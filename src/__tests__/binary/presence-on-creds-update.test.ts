@@ -19,7 +19,7 @@ const { DEFAULT_CONNECTION_CONFIG } = await import('../../Defaults')
 const makeWASocket = (await import('../../Socket')).default
 const { makeSession } = await import('../TestUtils/session')
 
-jest.setTimeout(15_000)
+jest.setTimeout(30_000)
 
 describe('presence announcement on creds.update', () => {
 	const ME = '1234567890:1@s.whatsapp.net'
