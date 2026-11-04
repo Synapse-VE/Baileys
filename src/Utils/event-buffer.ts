@@ -149,11 +149,12 @@ export const makeEventBuffer = (logger: ILogger): BaileysBufferableEventEmitter 
 		}
 
 		const consolidatedData = consolidateEvents(data)
+		// Swap before emitting: a listener that re-enters buffer() + emit() must
+		// land in the new buffer, not in the reference we are about to discard.
+		data = newData
 		if (Object.keys(consolidatedData).length) {
 			ev.emit('event', consolidatedData)
 		}
-
-		data = newData
 
 		logger.trace({ conditionalChatUpdatesLeft }, 'released buffered events')
 

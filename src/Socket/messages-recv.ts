@@ -53,12 +53,13 @@ import {
 	xmppSignedPreKey
 } from '../Utils'
 import { normalizeHistoryTimestamp } from '../Utils/history'
-import { makeMutex } from '../Utils/make-mutex'
+import { makeKeyedMutex, makeMutex } from '../Utils/make-mutex'
 import { isOfflineAttr } from '../Utils/offline'
 import { makeOfflineNodeProcessor, type MessageType } from '../Utils/offline-node-processor'
 import { isCompanionRegReady } from '../Utils/pairing'
 import { getReceiptTimestampField } from '../Utils/receipts'
-import { nextRetryCount, shouldRetryMessage } from '../Utils/retry-cache'
+import { incrementRetryCount, incrementSendAgainCount, type RetryCache } from '../Utils/retry-cache'
+import { shouldRetryMessage } from '../Utils/retry-cache'
 import { buildAckStanza } from '../Utils/stanza-ack'
 import {
 	buildMergedTcTokenIndexWrite,
@@ -164,6 +165,8 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 	// Debounce identity-change session refreshes per JID to avoid bursts
 	const identityAssertDebounce = new NodeCache<boolean>({ stdTTL: 5, useClones: false })
 	const identityChangeCleanupTimers = new Map<string, ReturnType<typeof setTimeout>>()
+	const retryLocks = makeKeyedMutex()
+	const retryCache = msgRetryCache as unknown as RetryCache
 
 	let sendActiveReceipts = false
 
@@ -578,46 +581,39 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 	}
 
 	const sendRetryRequest = async (node: BinaryNode, forceIncludeKeys = false) => {
-		const { fullMessage } = decodeMessageNode(node, authState.creds.me!.id, authState.creds.me!.lid || '')
+		const { fullMessage } = decodeMessageNode(node, authState.creds.me!.id, authState.creds.me?.lid || '')
 		const { key: msgKey } = fullMessage
 		const msgId = msgKey.id!
+		const retryKey = `${msgId}:${msgKey?.participant}`
 
+		let retryCount: number
 		if (messageRetryManager) {
-			// Check if we've exceeded max retries using the new system
-			if (messageRetryManager.hasExceededMaxRetries(msgId)) {
-				logger.debug({ msgId }, 'reached retry limit with new retry manager, clearing')
-				messageRetryManager.markRetryFailed(msgId)
+			const count = await retryLocks.mutex(retryKey, async () => {
+				if (messageRetryManager.hasExceededMaxRetries(msgId)) {
+					logger.debug({ msgId }, 'reached retry limit with new retry manager, clearing')
+					messageRetryManager.markRetryFailed(msgId)
+					return null
+				}
+
+				const next = messageRetryManager.incrementRetryCount(msgId)
+				await retryCache.set(retryKey, next)
+				return next
+			})
+
+			if (count === null) {
 				return
 			}
 
-			// Increment retry count using new system
-			const retryCount = messageRetryManager.incrementRetryCount(msgId)
-
-			// Use the new retry count for the rest of the logic
-			const key = `${msgId}:${msgKey?.participant}`
-			await msgRetryCache.set(key, retryCount)
+			retryCount = count
 		} else {
-			// Fallback to old system
-			const key = `${msgId}:${msgKey?.participant}`
-			const cachedRetryCount = await msgRetryCache.get<number | null>(key)
-			if (cachedRetryCount === null) {
-				logger.debug({ msgId }, 'retry suppressed by the cache')
+			const outcome = await incrementRetryCount(retryCache, retryKey, maxMsgRetryCount, retryLocks)
+			if (outcome.status !== 'incremented') {
+				logger.debug({ msgId, outcome: outcome.status }, 'retry not incremented')
 				return
 			}
 
-			let retryCount = cachedRetryCount ?? 0
-			if (retryCount >= maxMsgRetryCount) {
-				logger.debug({ retryCount, msgId }, 'reached retry limit, clearing')
-				await msgRetryCache.del(key)
-				return
-			}
-
-			retryCount += 1
-			await msgRetryCache.set(key, retryCount)
+			retryCount = outcome.count
 		}
-
-		const key = `${msgId}:${msgKey?.participant}`
-		const retryCount = (await msgRetryCache.get<number>(key)) || 1
 
 		const { account, signedPreKey, signedIdentityKey: identityKey } = authState.creds
 		const fromJid = node.attrs.from!
@@ -1343,17 +1339,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 
 	const updateSendMessageAgainCount = async (id: string, participant: string) => {
 		const key = `${id}:${participant}`
-		const cachedRetryCount = await msgRetryCache.get<number | null>(key)
-		if (cachedRetryCount === null) {
-			return
-		}
-
-		const newValue = nextRetryCount(cachedRetryCount)
-		if (newValue === null) {
-			return
-		}
-
-		await msgRetryCache.set(key, newValue)
+		await incrementSendAgainCount(retryCache, key, retryLocks)
 	}
 
 	const sendMessagesAgain = async (
