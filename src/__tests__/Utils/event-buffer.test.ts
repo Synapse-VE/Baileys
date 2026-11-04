@@ -170,3 +170,29 @@ describe('messages.update buffering', () => {
 		ev.destroy()
 	})
 })
+
+describe('event-buffer re-entrant flush', () => {
+	it('keeps an event emitted by a listener while flushing', () => {
+		const ev = makeEventBuffer(makeTestLogger())
+		const seen: any[] = []
+		let reentered = false
+		const key = (id: string) => ({ remoteJid: '1234567890@s.whatsapp.net', id, fromMe: false })
+
+		;(ev as unknown as { on(event: 'event', cb: (data: any) => void): void }).on('event', data => {
+			seen.push(data)
+			if (!reentered) {
+				reentered = true
+				ev.buffer()
+				ev.emit('messages.upsert', { messages: [{ key: key('m2') }], type: 'append' })
+			}
+		})
+
+		ev.buffer()
+		ev.emit('messages.upsert', { messages: [{ key: key('m1') }], type: 'append' })
+		ev.flush()
+		ev.flush()
+
+		expect(seen.flatMap(d => d['messages.upsert'] ?? []).some(u => u.messages?.[0]?.key?.id === 'm2')).toBe(true)
+		ev.destroy()
+	})
+})
