@@ -42,7 +42,7 @@ import { makeKeyedMutex, makeMutex } from '../Utils/make-mutex'
 import { getMessageReportingToken, shouldIncludeReportingToken } from '../Utils/reporting-utils'
 import { hasUsableSenderKey } from '../Utils/sender-key'
 import {
-	buildMergedTcTokenIndexWrite,
+	commitTcTokenWithIndex,
 	isTcTokenExpired,
 	resolveIssuanceJid,
 	resolveTcTokenJid,
@@ -1201,15 +1201,11 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 
 					const currentData = await authState.keys.get('tctoken', [tcTokenIssueJid])
 					const currentEntry = currentData[tcTokenIssueJid]
-					const indexWrite = await buildMergedTcTokenIndexWrite(authState.keys, [tcTokenIssueJid])
-					await authState.keys.set({
-						tctoken: {
-							[tcTokenIssueJid]: {
-								token: Buffer.alloc(0),
-								...currentEntry,
-								senderTimestamp: issueTimestamp
-							},
-							...indexWrite
+					await commitTcTokenWithIndex(authState.keys, [tcTokenIssueJid], {
+						[tcTokenIssueJid]: {
+							token: Buffer.alloc(0),
+							...currentEntry,
+							senderTimestamp: issueTimestamp
 						}
 					})
 				})

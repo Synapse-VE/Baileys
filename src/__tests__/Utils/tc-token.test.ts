@@ -4,6 +4,7 @@ import { SERVER_ERROR_CODES } from '../../Utils'
 import {
 	buildMergedTcTokenIndexWrite,
 	buildTcTokenFromJid,
+	commitTcTokenWithIndex,
 	isTcTokenExpired,
 	readTcTokenIndex,
 	resolveIssuanceJid,
@@ -1106,5 +1107,43 @@ describe('tctoken index helpers', () => {
 		const write = await buildMergedTcTokenIndexWrite(mockKeys, [TC_TOKEN_INDEX_KEY, '', 'a@lid'])
 		const merged = JSON.parse(write[TC_TOKEN_INDEX_KEY].token.toString())
 		expect(merged).toEqual(['a@lid'])
+	})
+})
+
+describe('commitTcTokenWithIndex', () => {
+	it('merges the persisted index and extra writes under one transaction', async () => {
+		const data: Record<string, { token: Buffer }> = {
+			[TC_TOKEN_INDEX_KEY]: { token: Buffer.from(JSON.stringify(['existing@lid'])) }
+		}
+		const scopes: unknown[] = []
+		const keys = {
+			get: async (_type: string, ids: string[]) => {
+				const result: Record<string, { token: Buffer }> = {}
+				for (const id of ids) if (data[id]) result[id] = data[id]
+				return result
+			},
+			set: async (update: { tctoken?: Record<string, { token: Buffer } | null> }) => {
+				Object.assign(data, update.tctoken)
+			},
+			transactWith: async (scope: unknown, work: () => Promise<void>) => {
+				scopes.push(scope)
+				await work()
+			}
+		}
+
+		await commitTcTokenWithIndex(keys as never, ['new@lid'], {
+			'new@lid': { token: Buffer.from('token') }
+		})
+
+		expect(scopes).toEqual([
+			{
+				records: [
+					{ type: 'tctoken', id: TC_TOKEN_INDEX_KEY },
+					{ type: 'tctoken', id: 'new@lid' }
+				]
+			}
+		])
+		expect(JSON.parse(data[TC_TOKEN_INDEX_KEY]!.token.toString())).toEqual(['existing@lid', 'new@lid'])
+		expect(data['new@lid']).toEqual({ token: Buffer.from('token') })
 	})
 })

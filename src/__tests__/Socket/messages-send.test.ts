@@ -136,7 +136,9 @@ describe('relayMessage tc-token issuance', () => {
 
 		expect(data.tctoken?.[CONTACT_LID]).toEqual({ token: TOKEN, timestamp: String(NOW), senderTimestamp: NOW })
 		expect(data.tctoken?.[TC_TOKEN_INDEX_KEY]?.token.toString()).toBe(JSON.stringify([CONTACT_LID]))
-		expect(transactionContexts).toEqual([false, false])
+		// The delayed tctoken writes now run in their own transactWith scope for
+		// atomic index merging; they must not inherit the relay's transaction.
+		expect(transactionContexts).toEqual([false, true])
 		await relay('next-message')
 		expect(query).toHaveBeenCalledTimes(1)
 		expect(sendNode).toHaveBeenCalledTimes(2)
