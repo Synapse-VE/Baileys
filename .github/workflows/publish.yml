@@ -50,9 +50,26 @@ jobs:
       - name: Smoke the published package
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
+          # npm accepts the publish before the public registry has the new
+          # version. Poll the write endpoint (which bypasses the negative CDN
+          # cache) for up to 10 minutes, then install with a fresh metadata
+          # fetch.
+          READY=0
+          for attempt in $(seq 1 40); do
+            if curl -fsS "https://registry.npmjs.org/@synapse-ve%2fbaileys?write=true" >/dev/null; then
+              READY=1
+              break
+            fi
+            sleep 15
+          done
+          if [[ "$READY" != "1" ]]; then
+            echo "npm registry never exposed the package metadata" >&2
+            exit 1
+          fi
+
           INSTALLED=0
           for attempt in 1 2 3 4 5; do
-            if npm install --prefix .pkg-smoke "@synapse-ve/baileys@${VERSION}" --no-fund --no-audit --registry=https://registry.npmjs.org; then
+            if npm install --prefer-online --prefix .pkg-smoke "@synapse-ve/baileys@${VERSION}" --no-fund --no-audit --registry=https://registry.npmjs.org; then
               INSTALLED=1
               break
             fi
