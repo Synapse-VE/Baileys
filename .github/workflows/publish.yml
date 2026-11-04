@@ -7,7 +7,6 @@ on:
 
 permissions:
   contents: write
-  packages: write
 
 jobs:
   publish:
@@ -20,8 +19,6 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '24.22.1'
-          registry-url: 'https://npm.pkg.github.com'
-          scope: '@synapse-ve'
 
       - name: Enable Corepack
         run: |
@@ -36,22 +33,35 @@ jobs:
           yarn lint
           yarn test
 
-      - name: Publish to GitHub Packages
-        run: npm publish --tag latest
+      - name: Publish to npmjs
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          # The token is written to an ephemeral runner npmrc; consumers do
+          # not need authentication because the package is public.
+          echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > "$HOME/.npmrc"
+          if [[ "$GITHUB_REF_NAME" == *-* ]]; then
+            TAG=next
+          else
+            TAG=latest
+          fi
+          npm publish --access public --tag "$TAG"
 
       - name: Smoke the published package
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
+          INSTALLED=0
           for attempt in 1 2 3 4 5; do
-            if npm install --prefix .pkg-smoke "@synapse-ve/baileys@${VERSION}" --no-fund --no-audit; then
+            if npm install --prefix .pkg-smoke "@synapse-ve/baileys@${VERSION}" --no-fund --no-audit --registry=https://registry.npmjs.org; then
+              INSTALLED=1
               break
             fi
             sleep 15
           done
+          if [[ "$INSTALLED" != "1" ]]; then
+            echo "published package was not installable from npmjs" >&2
+            exit 1
+          fi
           node --input-type=module -e "import('./.pkg-smoke/node_modules/@synapse-ve/baileys/lib/index.js').then(m => { if (typeof m.makeWASocket !== 'function') throw new Error('makeWASocket missing') })"
 
       - name: Create GitHub release

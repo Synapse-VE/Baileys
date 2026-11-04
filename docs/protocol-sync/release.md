@@ -1,7 +1,8 @@
 # Publicación del paquete
 
-El fork se publica como `@synapse-ve/baileys` en GitHub Packages. No se publica
-en npm público ni se envía nada a WhiskeySockets.
+El fork se publica como `@synapse-ve/baileys` en **npmjs.com**. No se envía
+nada a WhiskeySockets. GitHub Packages queda solo como espejo histórico de
+las versiones anteriores; las nuevas versiones van a npm público.
 
 ## Esquema de versión
 
@@ -22,27 +23,24 @@ con la versión del paquete.
    ```
 
 4. El workflow `Publish Package` corre lint, tests, `npm publish` contra
-   `https://npm.pkg.github.com` y crea el release de GitHub.
+   `https://registry.npmjs.org` usando el secreto `NPM_TOKEN`, y crea el
+   release de GitHub.
 
 ## Consumir el paquete
 
-`npm install @synapse-ve/baileys --registry=https://npm.pkg.github.com`
-
-El registro de GitHub Packages pide autenticación incluso para paquetes
-públicos. En el proyecto consumidor:
-
-```ini
-@synapse-ve:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+```bash
+npm install @synapse-ve/baileys
 ```
 
-El token necesita `read:packages`.
+El paquete es público en npmjs: **no requiere token ni `.npmrc`**. Para
+prereleases, `npm install @synapse-ve/baileys@next` o una versión exacta.
 
 ## Verificación
 
 - `npm pack --dry-run` debe incluir `lib/`, `WAProto/` y
   `scripts/patch-libsignal.cjs`.
-- Tras publicar, la versión aparece en la pestaña Packages del repositorio.
+- Tras publicar, `npm view @synapse-ve/baileys version` y
+  `npm install @synapse-ve/baileys@<versión>` funcionan sin autenticación.
 - Si el workflow falla, el tag queda creado igual: corregir y publicar una
   versión nueva en lugar de reutilizar el tag.
 
@@ -51,7 +49,7 @@ El token necesita `read:packages`.
 - Los tags con guion (`-rc`, `-sync`) crean un GitHub Release **prerelease**.
   No se marcan como Latest: GitHub no permite que un prerelease sea Latest.
 - Un tag estable (`vX.Y.Z`, sin guion) crea el release con `--latest`.
-- El `latest` del paquete en GitHub Packages es independiente y lo mueve
-  `npm publish --tag latest`; los prereleases del repositorio no lo afectan.
+- El dist-tag de npm es independiente: los prereleases se publican con
+  `--tag next`; solo una versión estable mueve `latest`.
 - Por eso, mientras la línea sea `v7.0.0-rc14.sync.N`, la página de Releases
   no muestra un “Latest”; el primer `v7.0.0` estable lo hará.
