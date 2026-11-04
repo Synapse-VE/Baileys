@@ -35,14 +35,12 @@ La brecha de auditoría quedó cerrada en las rondas 4–11 y publicada en
 - **tc-token index**: `commitTcTokenWithIndex` hace read-merge-write bajo
   `transactWith`; send y recv lo usan.
 - **Media host por socket**: `selectMediaHost`, `getMediaHost` y
-  `getMediaUrl`; el media retry usa el host actual. Queda pendiente hilar el
-  host en todos los call sites de descarga (history lo acepta; app-state no).
+  `getMediaUrl`; el host se actualiza en el socket base y se pasa a media
+  retry, history sync y descargas de app-state.
 - **H9/M6/#2751** siguen cubiertos desde las rondas previas.
 
 ## Restante (no bloquea v7)
 
-- **Media host completo**: descargas de app-state y helpers de usuario aún
-  pueden caer al host por defecto si no pasan `host`.
 - **H7 completo / SQLite auth store**: el store multi-file endurecido y el
   store SQLite de `develop` no se portaron; el bot usa su propio store y el
   paquete mantiene multi-file compatible.
