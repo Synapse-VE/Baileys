@@ -603,6 +603,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 			: recipientJids.map(jid => ({ recipientJid: jid, message: patched }))
 
 		let shouldIncludeDeviceIdentity = false
+		let firstEncryptionError: Error | undefined
 		const meId = authState.creds.me!.id
 		const meLid = authState.creds.me?.lid
 		const meLidUser = meLid ? jidDecode(meLid)?.user : null
@@ -653,6 +654,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 
 					return node
 				} catch (err) {
+					firstEncryptionError ??= err as Error
 					logger.error({ jid, err }, 'Failed to encrypt for recipient')
 					return null
 				}
@@ -662,6 +664,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 		const nodes = (await Promise.all(encryptionPromises)).filter(node => node !== null) as BinaryNode[]
 
 		if (recipientJids.length > 0 && nodes.length === 0) {
+			if (firstEncryptionError) throw firstEncryptionError
 			throw new Boom('All encryptions failed', { statusCode: 500 })
 		}
 
@@ -729,7 +732,9 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 			})
 		}
 
-		const tcTokenIssueJid = await authState.keys.transaction(async () => {
+		// No outer keys.transaction: inner per-record transactWith calls must
+		// commit their own session locks instead of deferring to this scope.
+		const tcTokenIssueJid = await (async () => {
 			const mediaType = getNormalizedMediaType(message)
 			if (mediaType) {
 				extraAttrs['mediatype'] = mediaType
@@ -1177,9 +1182,9 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 			if (is1on1Send && !isProtocolMsg && !isBotOrPSA && shouldSendNewTcToken(existingTokenEntry?.senderTimestamp)) {
 				return tcTokenJid
 			}
-		}, meId)
+		})()
 
-		// Start outside the committed transaction so delayed IQ writes cannot inherit its AsyncLocalStorage context.
+		// Start outside the (formerly outer) transaction so delayed IQ writes cannot inherit its AsyncLocalStorage context.
 		if (tcTokenIssueJid && !inFlightTcTokenIssuance.has(tcTokenIssueJid)) {
 			inFlightTcTokenIssuance.add(tcTokenIssueJid)
 			const issueTimestamp = unixTimestampSeconds()
