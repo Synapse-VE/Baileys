@@ -129,7 +129,10 @@
     "brace-expansion@npm:^2.0.2": "^2.1.7",
     "browserslist": "^4.29.5",
     "lodash": "^4.18.1",
-    "zod": "^4.6.7"
+    "zod": "^4.6.7",
+    "@babel/core": "^7.29.7",
+    "@humanfs/node": "^0.17.0",
+    "@ungap/structured-clone": "^1.4.0"
   },
   "peerDependenciesMeta": {
     "audio-decode": {
