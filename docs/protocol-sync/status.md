@@ -1,13 +1,13 @@
 # Estado del protocolo
 
-Generado: 2026-11-04T16:41:55.003Z
+Generado: 2026-11-04T17:06:16.352Z
 
 | Dato | Valor |
 |---|---|
-| Paquete | `@synapse-ve/baileys@7.0.0-rc14.sync.19` |
+| Paquete | `@synapse-ve/baileys@7.0.0-rc14.sync.20` |
 | Proto | `2.3000.1052966331` |
 | Versión anunciada | `2.3000.1052966331` |
-| WhatsApp Web hoy | `2.3000.1053060988` |
+| WhatsApp Web hoy | `2.3000.1053070940` |
 | Proto y versión coinciden | sí |
 | Versión anunciada al día | no |
 
