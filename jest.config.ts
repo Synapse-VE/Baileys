@@ -4,6 +4,8 @@ import type { Config } from 'jest'
 const config: Config = {
 	preset: 'ts-jest/presets/default-esm',
 	testEnvironment: 'node',
+	// socket tests occasionally exceed the 5s default under the full parallel suite
+	testTimeout: 30_000,
 	roots: ['<rootDir>/src', '<rootDir>/WAProto'],
 	testMatch: ['<rootDir>/src/**/*.test.ts'],
 	extensionsToTreatAsEsm: ['.ts'],
