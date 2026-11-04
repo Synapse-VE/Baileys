@@ -516,6 +516,12 @@ export type MediaDownloadOptions = {
 	host?: string
 }
 
+/** Pick the first advertised media CDN host, falling back to the default. */
+export const selectMediaHost = (
+	hosts: Array<{ hostname?: string | null }> | null | undefined,
+	fallback = DEF_MEDIA_HOST
+) => hosts?.find(host => !!host.hostname)?.hostname ?? fallback
+
 export const getUrlFromDirectPath = (directPath: string, host: string = DEF_MEDIA_HOST) =>
 	`https://${host}${directPath}`
 

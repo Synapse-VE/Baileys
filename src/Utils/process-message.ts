@@ -52,6 +52,8 @@ type ProcessMessageContext = {
 	options: RequestInit
 	signalRepository: SignalRepositoryWithLIDStore
 	getMessage: SocketConfig['getMessage']
+	/** Current per-socket media CDN host, used for history-sync downloads. */
+	getMediaHost?: () => string
 }
 
 const REAL_MSG_STUB_TYPES = new Set([
@@ -309,7 +311,8 @@ const processMessage = async (
 		keyStore,
 		logger,
 		options,
-		getMessage
+		getMessage,
+		getMediaHost
 	}: ProcessMessageContext
 ) => {
 	// M8: skip a redelivered (msgId, sender) pair. Mark it in-flight before
@@ -424,7 +427,12 @@ const processMessage = async (
 							})
 						}
 
-						const data = await downloadAndProcessHistorySyncNotification(histNotification, options, logger)
+						const data = await downloadAndProcessHistorySyncNotification(
+							histNotification,
+							options,
+							logger,
+							getMediaHost?.()
+						)
 
 						if (data.lidPnMappings?.length) {
 							logger?.debug({ count: data.lidPnMappings.length }, 'processing LID-PN mappings from history sync')

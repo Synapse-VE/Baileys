@@ -33,6 +33,7 @@ import {
 	MessageRetryManager,
 	normalizeMessageContent,
 	parseAndInjectE2ESessions,
+	selectMediaHost,
 	unixTimestampSeconds
 } from '../Utils'
 import { resolveLidDestination } from '../Utils/lid'
@@ -202,9 +203,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 					fetchDate: new Date()
 				}
 				logger.debug('fetched media conn')
-				if (node.hosts[0]) {
-					mediaHost = node.hosts[0].hostname
-				}
+				mediaHost = selectMediaHost(node.hosts)
 
 				return node
 			})()
@@ -1287,6 +1286,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 		}
 
 		mediaConn = undefined
+		mediaHost = DEF_MEDIA_HOST
 		if (messageRetryManager) {
 			messageRetryManager.clear()
 		}
@@ -1295,6 +1295,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 	return {
 		...sock,
 		recentlyChangedIdentities,
+		getMediaUrl: (directPath: string) => getUrlFromDirectPath(directPath, mediaHost),
 		userDevicesCache,
 		devicesMutex,
 		issuePrivacyTokens,
