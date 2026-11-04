@@ -55,6 +55,6 @@ jobs:
           node --input-type=module -e "import('./.pkg-smoke/node_modules/@synapse-ve/baileys/lib/index.js').then(m => { if (typeof m.makeWASocket !== 'function') throw new Error('makeWASocket missing') })"
 
       - name: Create GitHub release
-        run: gh release create "$GITHUB_REF_NAME" --generate-notes --title "$GITHUB_REF_NAME"
+        run: gh release create "$GITHUB_REF_NAME" --generate-notes --prerelease --title "$GITHUB_REF_NAME"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

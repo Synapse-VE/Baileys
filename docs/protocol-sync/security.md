@@ -37,11 +37,32 @@ Cambios de esta ronda:
 
 ## Deuda conocida (solo desarrollo)
 
-`protobufjs-cli@1.2.0` tiene advisories de inyección de código/comando al
-procesar esquemas no confiables. Solo corre en CI/local sobre el bundle de
-WhatsApp, nunca sobre input de usuario, y la versión 2.x cambió el output de
-los estáticos y rompió la suite: se mantiene 1.2.0 hasta adaptar el pipeline.
-Dependabot lo va a reportar; no afecta al paquete publicado.
+`protobufjs-cli` se actualizó de 1.2.0 a 1.3.3: cierra las tres alertas
+high (GHSA-f84p-cvgm-xgjj, GHSA-6r35-46g8-jcw9, GHSA-pr59-h9ph-3fr8). La
+generación estática quedó byte-idéntica y `test:proto`/`test:scripts` siguen
+verdes. No se subió a 2.x porque cambia el output y rompe el pipeline.
+
+Alertas de desarrollo aceptadas y cerradas en Dependabot:
+
+- `minimatch` GHSA-g3hv-75wg-m249 (medium): el parche es 11.0.1, pero ESLint
+  10 sigue dependiendo de `^10.2.x` y forzar 11 rompe su API. Solo se usa con
+  globs fijos del tooling; se revisa cuando ESLint actualice.
+- `deepmerge` GHSA-gcqx-w48m-w2h4 (low): no existe versión parcheada (4.3.1
+  está dentro del rango vulnerable). Lo usa `jest-config` con configuración
+  propia, no input de usuario; se revisa cuando haya fix.
+
+## Backport de seguridad #2751
+
+La línea v7 heredó dos bugs que upstream solo corrigió en `develop`:
+
+- `Curve.verify` descartaba el boolean de `curve.verifySignature`, así que una
+  firma bien formada pero inválida se aceptaba (certificados Noise y firma de
+  cuenta del pairing).
+- `extractDeviceJids` reutilizaba `domainType` entre dispositivos, y un
+  dispositivo hosted contaminaba los siguientes.
+
+Backport con tests en `curve-verify.test.ts` y
+`signal.device-domain.test.ts`. Ver el PR upstream #2751.
 
 `zod` quedó forzado a 4.6.7 para el árbol de `jimp` (peer opcional de
 miniaturas); los tests de media pasan.
