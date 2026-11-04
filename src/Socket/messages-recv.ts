@@ -62,7 +62,7 @@ import { incrementRetryCount, incrementSendAgainCount, type RetryCache } from '.
 import { shouldRetryMessage } from '../Utils/retry-cache'
 import { buildAckStanza } from '../Utils/stanza-ack'
 import {
-	buildMergedTcTokenIndexWrite,
+	commitTcTokenWithIndex,
 	isTcTokenExpired,
 	readTcTokenIndex,
 	resolveIssuanceJid,
@@ -1263,10 +1263,9 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			tcTokenIndexTimer = undefined
 		}
 
-		// Merge with whatever is already persisted so we don't clobber writes from other
-		// paths (history sync, concurrent sessions on the same store).
-		const write = await buildMergedTcTokenIndexWrite(authState.keys, tcTokenKnownJids)
-		return authState.keys.set({ tctoken: write })
+		// Merge under a transactWith lock so concurrent send/history paths
+		// cannot lose each other's additions between read and write.
+		await commitTcTokenWithIndex(authState.keys, tcTokenKnownJids)
 	}
 
 	function scheduleTcTokenIndexSave() {

@@ -1,4 +1,4 @@
-import type { SignalKeyStoreWithTransaction } from '../Types'
+import type { SignalDataTypeMap, SignalKeyStoreWithRecordTransaction, SignalKeyStoreWithTransaction } from '../Types'
 import type { BinaryNode } from '../WABinary'
 import {
 	getBinaryNodeChild,
@@ -64,6 +64,33 @@ export async function buildMergedTcTokenIndexWrite(
 	return {
 		[TC_TOKEN_INDEX_KEY]: { token: Buffer.from(JSON.stringify([...merged])) }
 	}
+}
+
+/**
+ * Atomically merge JIDs into the persisted tctoken index. Concurrent callers
+ * serialize on the index record, so no additions are lost between the read and
+ * the write. Extra per-JID token writes can piggyback on the same transaction.
+ */
+export async function commitTcTokenWithIndex(
+	keys: SignalKeyStoreWithRecordTransaction,
+	addedJids: Iterable<string>,
+	extraWrites?: { [jid: string]: SignalDataTypeMap['tctoken'] | null }
+): Promise<void> {
+	const recordIds = [TC_TOKEN_INDEX_KEY, ...Object.keys(extraWrites ?? {})]
+	await keys.transactWith({ records: recordIds.map(id => ({ type: 'tctoken', id })) }, async () => {
+		const persisted = await readTcTokenIndex(keys)
+		const merged = new Set(persisted)
+		for (const jid of addedJids) {
+			if (jid && jid !== TC_TOKEN_INDEX_KEY) merged.add(jid)
+		}
+
+		await keys.set({
+			tctoken: {
+				...(extraWrites ?? {}),
+				[TC_TOKEN_INDEX_KEY]: { token: Buffer.from(JSON.stringify([...merged])) }
+			}
+		})
+	})
 }
 
 // WA Web has separate sender/receiver AB props for these but they're identical today
