@@ -411,6 +411,9 @@ export const makeSocket = (config: SocketConfig) => {
 		return []
 	}
 
+	// Kept in sync with DEF_MEDIA_HOST in Utils/messages-media.
+	let mediaHost = 'mmg.whatsapp.net'
+
 	const ev = makeEventBuffer(logger)
 
 	const { creds } = authState
@@ -1326,6 +1329,10 @@ export const makeSocket = (config: SocketConfig) => {
 		generateMessageTag,
 		query,
 		waitForMessage,
+		getMediaHost: () => mediaHost,
+		setMediaHost: (host: string) => {
+			mediaHost = host
+		},
 		waitForSocketOpen,
 		sendRawMessage,
 		sendNode,

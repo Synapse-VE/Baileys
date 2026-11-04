@@ -984,7 +984,9 @@ export const makeChatsSocket = (config: SocketConfig) => {
 				getAppStateSyncKey,
 				config.options,
 				undefined,
-				logger
+				logger,
+				undefined,
+				sock.getMediaHost()
 			)
 			for (const key in mutationMap) {
 				onMutation(mutationMap[key]!)
@@ -1335,7 +1337,8 @@ export const makeChatsSocket = (config: SocketConfig) => {
 				keyStore: authState.keys,
 				logger,
 				options: config.options,
-				getMessage
+				getMessage,
+				getMediaHost: sock.getMediaHost
 			})
 		])
 

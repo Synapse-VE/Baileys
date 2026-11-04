@@ -204,6 +204,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 				}
 				logger.debug('fetched media conn')
 				mediaHost = selectMediaHost(node.hosts)
+				sock.setMediaHost(mediaHost)
 
 				return node
 			})()
@@ -1288,6 +1289,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 
 		mediaConn = undefined
 		mediaHost = DEF_MEDIA_HOST
+		sock.setMediaHost(DEF_MEDIA_HOST)
 		if (messageRetryManager) {
 			messageRetryManager.clear()
 		}
