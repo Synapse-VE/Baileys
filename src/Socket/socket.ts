@@ -180,12 +180,31 @@ export const makeSocket = (config: SocketConfig) => {
 	 * @param msgId the message tag to await
 	 * @param timeoutMs timeout after which the promise will reject
 	 */
+	// M9: a second waiter for the same tag would steal the first response.
+	const inFlightQueryTags = new Set<string>()
+
 	const waitForMessage = async <T>(msgId: string, timeoutMs = defaultQueryTimeoutMs) => {
+		if (inFlightQueryTags.has(msgId)) {
+			throw new Boom('duplicate in-flight query tag', {
+				statusCode: 409,
+				data: { msgId }
+			})
+		}
+
+		inFlightQueryTags.add(msgId)
+
 		let onRecv: ((data: T) => void) | undefined
 		let onErr: ((err: Error) => void) | undefined
+		let resolvedOnce = false
 		try {
 			const result = await promiseTimeout<T>(timeoutMs, (resolve, reject) => {
 				onRecv = data => {
+					if (resolvedOnce) {
+						logger?.warn?.({ msgId }, 'duplicate response for in-flight query tag (later response dropped)')
+						return
+					}
+
+					resolvedOnce = true
 					resolve(data)
 				}
 
@@ -206,14 +225,17 @@ export const makeSocket = (config: SocketConfig) => {
 			})
 			return result
 		} catch (error) {
-			// Catch timeout and return undefined instead of throwing
 			if (error instanceof Boom && error.output?.statusCode === DisconnectReason.timedOut) {
 				logger?.warn?.({ msgId }, 'timed out waiting for message')
-				return undefined
+				throw new Boom(`Timed out waiting for response to query ${msgId}`, {
+					statusCode: DisconnectReason.timedOut,
+					data: { msgId, timeoutMs }
+				})
 			}
 
 			throw error
 		} finally {
+			inFlightQueryTags.delete(msgId)
 			if (onRecv) ws.off(`TAG:${msgId}`, onRecv)
 			if (onErr) {
 				ws.off('close', onErr)

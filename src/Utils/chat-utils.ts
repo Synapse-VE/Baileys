@@ -419,6 +419,43 @@ export const downloadExternalPatch = async (blob: proto.IExternalBlobReference, 
 	return syncData
 }
 
+/**
+ * Thrown when a patch's LTHash MAC does not match the locally computed value.
+ * M7: previously the loop logged and broke, leaving the state partially
+ * advanced; later patches then failed forever. Throwing lets the caller
+ * resync from a snapshot.
+ */
+export class LTHashMismatchError extends Error {
+	readonly patchName: string
+	readonly version: number
+	constructor(patchName: string, version: number) {
+		super(`LTHash verification failed for patch "${patchName}" at version ${version}`)
+		this.name = 'LTHashMismatchError'
+		this.patchName = patchName
+		this.version = version
+	}
+}
+
+/** Validate a patch's LTHash MAC and surface divergence as a typed error (M7). */
+export const verifyPatchLTHash = ({
+	name,
+	version,
+	hash,
+	snapshotMac,
+	snapshotMacKey
+}: {
+	name: WAPatchName
+	version: number
+	hash: Uint8Array
+	snapshotMac: Uint8Array
+	snapshotMacKey: Uint8Array
+}) => {
+	const computed = generateSnapshotMac(hash, version, name, snapshotMacKey)
+	if (Buffer.compare(snapshotMac, computed) !== 0) {
+		throw new LTHashMismatchError(name, version)
+	}
+}
+
 export const decodeSyncdSnapshot = async (
 	name: WAPatchName,
 	snapshot: proto.ISyncdSnapshot,
@@ -539,10 +576,20 @@ export const decodePatches = async (
 			}
 
 			const result = mutationKeys(keyEnc.keyData!)
-			const computedSnapshotMac = generateSnapshotMac(newState.hash, newState.version, name, result.snapshotMacKey)
-			if (Buffer.compare(snapshotMac!, computedSnapshotMac) !== 0) {
-				logger?.warn({ name, version: newState.version }, 'LTHash verification failed, skipping remaining patches')
-				break
+			try {
+				verifyPatchLTHash({
+					name,
+					version: newState.version,
+					hash: newState.hash,
+					snapshotMac: snapshotMac!,
+					snapshotMacKey: result.snapshotMacKey
+				})
+			} catch (error) {
+				logger?.warn(
+					{ name, version: newState.version },
+					'LTHash verification failed, throwing so the caller can resync'
+				)
+				throw error
 			}
 		}
 

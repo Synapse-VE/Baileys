@@ -2,7 +2,14 @@ import { jest } from '@jest/globals'
 import { randomBytes } from 'crypto'
 import { proto } from '../../../WAProto/index.js'
 import type { LTHashState, WAPatchName } from '../../Types'
-import { decodeSyncdMutations, decodeSyncdSnapshot, encodeSyncdPatch, newLTHashState } from '../../Utils/chat-utils'
+import {
+	decodeSyncdMutations,
+	decodeSyncdSnapshot,
+	encodeSyncdPatch,
+	LTHashMismatchError,
+	newLTHashState,
+	verifyPatchLTHash
+} from '../../Utils/chat-utils'
 
 /**
  * Resilience tests for app-state-sync decode paths.
@@ -162,5 +169,19 @@ describe('decodeSyncdSnapshot resilience', () => {
 		expect(call[1]).toMatch(/LTHash verification failed/)
 		// The valid record should still have been processed into the mutation map.
 		expect(Object.keys(mutationMap).length).toBe(1)
+	})
+})
+
+describe('verifyPatchLTHash (M7)', () => {
+	it('throws a typed mismatch instead of returning partial state', () => {
+		expect(() =>
+			verifyPatchLTHash({
+				name: NAME,
+				version: 3,
+				hash: Buffer.alloc(128),
+				snapshotMac: randomBytes(32),
+				snapshotMacKey: randomBytes(32)
+			})
+		).toThrow(LTHashMismatchError)
 	})
 })
