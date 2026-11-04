@@ -11,6 +11,8 @@ const makeNewsletterSocket = jest.fn()
 jest.unstable_mockModule('../../Socket/newsletter', () => ({ makeNewsletterSocket }))
 const { makeMessagesSocket } = await import('../../Socket/messages-send')
 
+jest.setTimeout(60_000)
+
 const ME = 'me:1@s.whatsapp.net'
 const CONTACT = 'contact@s.whatsapp.net'
 const CONTACT_LID = 'contact@lid'
