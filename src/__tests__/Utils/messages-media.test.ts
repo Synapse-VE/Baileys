@@ -6,7 +6,14 @@ import * as path from 'path'
 import { Readable } from 'stream'
 import type { MediaConnInfo, SocketConfig } from '../../Types'
 import type { ILogger } from '../../Utils/logger'
-import { encryptedStream, getWAUploadToServer, type UploadParams, uploadWithNodeHttp } from '../../Utils/messages-media'
+import {
+	encryptedStream,
+	getUrlFromDirectPath,
+	getWAUploadToServer,
+	selectMediaHost,
+	type UploadParams,
+	uploadWithNodeHttp
+} from '../../Utils/messages-media'
 
 const createTempFile = async (content: string): Promise<string> => {
 	const filePath = path.join(os.tmpdir(), `test-upload-${Date.now()}.txt`)
@@ -484,5 +491,21 @@ describe('encryptedStream', () => {
 			expect(result.mediaKey).toBeDefined()
 			await cleanupFiles([result.encFilePath, result.originalFilePath])
 		}
+	})
+})
+
+describe('per-socket media host', () => {
+	it('selects the first advertised host and falls back to the default', () => {
+		expect(selectMediaHost([{ hostname: 'media-sin1.whatsapp.net' }, { hostname: 'other' }])).toBe(
+			'media-sin1.whatsapp.net'
+		)
+		expect(selectMediaHost([], 'mmg.whatsapp.net')).toBe('mmg.whatsapp.net')
+		expect(selectMediaHost(undefined)).toBe('mmg.whatsapp.net')
+	})
+
+	it('builds a media URL on the selected host', () => {
+		expect(getUrlFromDirectPath('/v/t62.7118-24/abc', 'media-sin1.whatsapp.net')).toBe(
+			'https://media-sin1.whatsapp.net/v/t62.7118-24/abc'
+		)
 	})
 })
