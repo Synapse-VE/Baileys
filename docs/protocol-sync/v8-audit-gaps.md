@@ -5,37 +5,56 @@ Upstream mantiene en `develop` una serie de auditoría de concurrencia
 línea es v7 (`master`/rc14), así que nada de eso se puede cherry-pickear
 directo. Este documento registra qué está cubierto, qué se porteó y qué queda.
 
-## Portado en la línea v7
+## Portado en la línea v7 (2026-11-04)
 
-- **H9 — contador de retry**: los caminos entrante y de reenvío hacían
-  get→+1→set sin lock por mensaje. Ahora usan `makeKeyedMutex` y
-  `incrementRetryCount`/`incrementSendAgainCount` con tests de concurrencia.
-- **M6 — flush del event-buffer**: el puntero de datos se cambiaba después de
-  emitir, así que un listener re-entrante escribía en el buffer descartado.
-  Ahora se cambia antes; test de re-entrada que falla con el orden viejo.
-- **#2751 — firma y dominios**: `Curve.verify` honra el resultado de
-  `verifySignature` y `domainType` se deriva por dispositivo.
+La brecha de auditoría quedó cerrada en las rondas 4–11 y publicada en
+`sync.18`–`sync.22`:
+
+- **M2 — contador de prekeys**: `getNextPreKeysNode` separa `nextPreKeyId`
+  (alloc, antes del upload) de `firstUnuploadedPreKeyId` (commit, solo tras la
+  confirmación). El batch se genera una vez y se reusa en los retries.
+- **M10 — Noise**: IV AES-GCM fresco por llamada y `decodeFrame` serializado
+  con mutex (incluido el drain de `finishInit`).
+- **M9 — query timeout**: `waitForMessage` lanza Boom 408 tipado, rechaza tags
+  duplicados con 409 y descarta respuestas duplicadas con warning.
+- **M7 — LTHash**: `decodePatches` lanza `LTHashMismatchError` en vez de
+  cortar con estado parcial; el caller ya fuerza snapshot retry.
+- **M8 — idempotencia**: `processMessage` deduplica `(msgId, sender)` con
+  cache de 10 min, check-and-set atómico y rollback en error.
+- **H0/H2/H4/H10 — transacciones**: `LockManager`, `transactWith(scope)`,
+  locks por registro, commit retry y aislamiento por store. La API legacy
+  `transaction(work, key)` sigue disponible y ya no reutiliza el contexto
+  externo para otra key.
+- **H1/H3/H8/M11 — sesiones/identidad**: encrypt/decrypt/storeSession/
+  saveIdentity usan `transactWith` sobre el wire address resuelto y pinned;
+  `saveIdentity` commitea session + identity-key juntos; sender-key por
+  registro; se quitó la transacción legacy externa de `relayMessage`.
+- **H6 — cache write-through**: `makeCacheableSignalKeyStore` escribe al store
+  primero y actualiza cache después, con locks por registro.
 - **H7 parcial**: `useMultiFileAuthState` ya usa tmp + rename atómico.
+- **tc-token index**: `commitTcTokenWithIndex` hace read-merge-write bajo
+  `transactWith`; send y recv lo usan.
+- **Media host por socket**: `selectMediaHost`, `getMediaHost` y
+  `getMediaUrl`; el media retry usa el host actual. Queda pendiente hilar el
+  host en todos los call sites de descarga (history lo acepta; app-state no).
+- **H9/M6/#2751** siguen cubiertos desde las rondas previas.
 
-## No portado (y por qué)
+## Restante (no bloquea v7)
 
-- **H0/H2/H4/H10 — transacciones y locks**: requieren el `transactWith` y el
-  `LockManager` del rewrite; portarlo a v7 es un cambio estructural grande.
-- **H1/H3/H8/M11 — carreras de sesión/identidad**: dependen de H0 y del
-  `transactWith`; no se tocan sin ese sustrato.
-- **H6 — cache write-through**: invierte el orden cache/store; conviene
-  hacerlo junto con el rewrite de auth para no romper stores existentes.
-- **M7/M8/M9**: LTHash, idempotencia de processMessage y timeouts de query
-  cambian contratos observables; necesitan análisis separado.
-- **M10 — Noise**: el IV compartido es seguro mientras encrypt/decrypt sean
-  síncronos, pero falta serializar `decodeFrame`; queda como hardening.
-- **M2 — contador de prekeys**: sigue avanzando antes de la confirmación del
-  upload. El reoffer de #57 evita el crecimiento en cuentas grandes, pero un
-  upload fallido aún puede dejar IDs avanzados.
-- **Stage 10 — tc-token index transactWith**: ya sacamos la emisión fuera de
-  la transacción de relay (#50); falta la escritura atómica del índice.
-- **Media host por socket**: seguimos usando el host por defecto en descargas;
-  portarlo requiere tocar todos los call sites de media.
+- **Media host completo**: descargas de app-state y helpers de usuario aún
+  pueden caer al host por defecto si no pasan `host`.
+- **H7 completo / SQLite auth store**: el store multi-file endurecido y el
+  store SQLite de `develop` no se portaron; el bot usa su propio store y el
+  paquete mantiene multi-file compatible.
+- **Monorepo pnpm + Rust bridge**: línea v8, no se adopta en v7.
+- **PQXDH/Kyber**: libsignal 6 no lo soporta; sigue fuera de alcance.
+
+## Estado de la suite
+
+- 611 tests (610 pass, 1 todo) al cierre de `sync.22`.
+- Build, lint, proto-check y publish/smoke verdes en CI.
+- Soak/E2E con teléfono: smoke de publish ejecutado; el soak largo sigue
+  siendo una corrida manual, no un gate de CI.
 
 ## Forks evaluados
 
