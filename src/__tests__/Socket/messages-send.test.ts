@@ -217,11 +217,13 @@ describe('relayMessage tc-token issuance', () => {
 		await expect(relay()).rejects.toThrow('synthetic commit failure')
 		await drainTasks()
 		expect(query).not.toHaveBeenCalled()
-		expect(sendNode).toHaveBeenCalledTimes(1)
+		// The per-session transaction now commits before the stanza is sent,
+		// so a failed write aborts before sendNode instead of after it.
+		expect(sendNode).not.toHaveBeenCalled()
 
 		await relay('next-message')
 		await complete()
 		expect(query).toHaveBeenCalledTimes(1)
-		expect(sendNode).toHaveBeenCalledTimes(2)
+		expect(sendNode).toHaveBeenCalledTimes(1)
 	})
 })
