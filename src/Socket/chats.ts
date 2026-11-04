@@ -150,6 +150,15 @@ export const makeChatsSocket = (config: SocketConfig) => {
 		}) as CacheStore)
 
 	/** helper function to fetch the given app state sync key */
+	/**
+	 * M8 idempotency cache for processMessage. Ten minutes covers retry and
+	 * duplicate-stanza windows; presence of the key means "already processed".
+	 */
+	const processedMessageCache: CacheStore = new NodeCache<boolean>({
+		stdTTL: 10 * 60,
+		useClones: false
+	}) as CacheStore
+
 	const getAppStateSyncKey = async (keyId: string) => {
 		const { [keyId]: key } = await authState.keys.get('app-state-sync-key', [keyId])
 		return key
@@ -1320,6 +1329,7 @@ export const makeChatsSocket = (config: SocketConfig) => {
 				signalRepository,
 				shouldProcessHistoryMsg,
 				placeholderResendCache,
+				processedMessageCache,
 				ev,
 				creds: authState.creds,
 				keyStore: authState.keys,
@@ -1475,6 +1485,10 @@ export const makeChatsSocket = (config: SocketConfig) => {
 
 		if (!config.placeholderResendCache && placeholderResendCache.close) {
 			placeholderResendCache.close()
+		}
+
+		if (processedMessageCache.close) {
+			processedMessageCache.close()
 		}
 
 		syncState = SyncState.Connecting
