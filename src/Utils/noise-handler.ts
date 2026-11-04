@@ -1,4 +1,5 @@
 import { Boom } from '@hapi/boom'
+import { Mutex } from 'async-mutex'
 import { proto } from '../../WAProto/index.js'
 import { NOISE_MODE, WA_CERT_DETAILS } from '../Defaults'
 import type { KeyPair } from '../Types'
@@ -11,17 +12,26 @@ const IV_LENGTH = 12
 
 const EMPTY_BUFFER = Buffer.alloc(0)
 
-const generateIV = (counter: number): Uint8Array => {
-	const iv = new ArrayBuffer(IV_LENGTH)
-	new DataView(iv).setUint32(8, counter)
-	return new Uint8Array(iv)
+/**
+ * Fresh AES-GCM IV per call. The previous shared buffer was only safe because
+ * the AEAD is synchronous; any async/streaming change would reuse an IV with
+ * the same key, which is catastrophic for GCM (M10).
+ */
+const ivForCounter = (counter: number): Uint8Array => {
+	const iv = new Uint8Array(IV_LENGTH)
+	iv[8] = (counter >>> 24) & 0xff
+	iv[9] = (counter >>> 16) & 0xff
+	iv[10] = (counter >>> 8) & 0xff
+	iv[11] = counter & 0xff
+	return iv
 }
+
+/** Test-only: pins the fresh-allocation contract, not just ciphertext inequality. */
+export const __testOnly_ivForCounter = ivForCounter
 
 class TransportState {
 	private readCounter = 0
 	private writeCounter = 0
-
-	private readonly iv = new Uint8Array(IV_LENGTH)
 
 	constructor(
 		private readonly encKey: Uint8Array,
@@ -29,23 +39,11 @@ class TransportState {
 	) {}
 
 	encrypt(plaintext: Uint8Array): Uint8Array {
-		const c = this.writeCounter++
-		this.iv[8] = (c >>> 24) & 0xff
-		this.iv[9] = (c >>> 16) & 0xff
-		this.iv[10] = (c >>> 8) & 0xff
-		this.iv[11] = c & 0xff
-
-		return aesEncryptGCM(plaintext, this.encKey, this.iv, EMPTY_BUFFER)
+		return aesEncryptGCM(plaintext, this.encKey, ivForCounter(this.writeCounter++), EMPTY_BUFFER)
 	}
 
 	decrypt(ciphertext: Uint8Array): Buffer {
-		const c = this.readCounter++
-		this.iv[8] = (c >>> 24) & 0xff
-		this.iv[9] = (c >>> 16) & 0xff
-		this.iv[10] = (c >>> 8) & 0xff
-		this.iv[11] = c & 0xff
-
-		return aesDecryptGCM(ciphertext, this.decKey, this.iv, EMPTY_BUFFER) as Buffer
+		return aesDecryptGCM(ciphertext, this.decKey, ivForCounter(this.readCounter++), EMPTY_BUFFER) as Buffer
 	}
 }
 
@@ -101,7 +99,7 @@ export const makeNoiseHandler = ({
 			return transport.encrypt(plaintext)
 		}
 
-		const result = aesEncryptGCM(plaintext, encKey, generateIV(counter++), hash)
+		const result = aesEncryptGCM(plaintext, encKey, ivForCounter(counter++), hash)
 		authenticate(result)
 		return result
 	}
@@ -111,7 +109,7 @@ export const makeNoiseHandler = ({
 			return transport.decrypt(ciphertext)
 		}
 
-		const result = aesDecryptGCM(ciphertext, decKey, generateIV(counter++), hash)
+		const result = aesDecryptGCM(ciphertext, decKey, ivForCounter(counter++), hash)
 		authenticate(ciphertext)
 		return result
 	}
@@ -129,6 +127,8 @@ export const makeNoiseHandler = ({
 		counter = 0
 	}
 
+	const decodeFrameMutex = new Mutex()
+
 	const finishInit = async () => {
 		isWaitingForTransport = true
 		const [write, read] = localHKDF(new Uint8Array(0))
@@ -138,9 +138,12 @@ export const makeNoiseHandler = ({
 		logger.trace('Noise handler transitioned to Transport state')
 
 		if (pendingOnFrame) {
-			logger.trace({ length: inBytes.length }, 'Flushing buffered frames after transport ready')
-			await processData(pendingOnFrame)
-			pendingOnFrame = null
+			// Same inBytes/processData path as decodeFrame; serialize it.
+			await decodeFrameMutex.runExclusive(async () => {
+				logger.trace({ length: inBytes.length }, 'Flushing buffered frames after transport ready')
+				await processData(pendingOnFrame!)
+				pendingOnFrame = null
+			})
 		}
 	}
 
@@ -249,20 +252,23 @@ export const makeNoiseHandler = ({
 
 			return frame
 		},
-		decodeFrame: async (newData: Buffer | Uint8Array, onFrame: (buff: Uint8Array | BinaryNode) => void) => {
-			if (isWaitingForTransport) {
-				inBytes = Buffer.concat([inBytes, newData])
-				pendingOnFrame = onFrame
-				return
-			}
+		decodeFrame: (newData: Buffer | Uint8Array, onFrame: (buff: Uint8Array | BinaryNode) => void) => {
+			// Serialize the inBytes mutation and the awaited processData drain.
+			return decodeFrameMutex.runExclusive(async () => {
+				if (isWaitingForTransport) {
+					inBytes = Buffer.concat([inBytes, newData])
+					pendingOnFrame = onFrame
+					return
+				}
 
-			if (inBytes.length === 0) {
-				inBytes = Buffer.from(newData)
-			} else {
-				inBytes = Buffer.concat([inBytes, newData])
-			}
+				if (inBytes.length === 0) {
+					inBytes = Buffer.from(newData)
+				} else {
+					inBytes = Buffer.concat([inBytes, newData])
+				}
 
-			await processData(onFrame)
+				await processData(onFrame)
+			})
 		}
 	}
 }

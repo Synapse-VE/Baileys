@@ -1,7 +1,7 @@
 import { jest } from '@jest/globals'
 import { NOISE_WA_HEADER } from '../../Defaults'
 import { Curve } from '../../Utils/crypto'
-import { makeNoiseHandler } from '../../Utils/noise-handler'
+import { __testOnly_ivForCounter, makeNoiseHandler } from '../../Utils/noise-handler'
 import type { BinaryNode } from '../../WABinary/types'
 
 // Create a mock logger
@@ -334,6 +334,18 @@ describe('Noise Handler', () => {
 			await handler.decodeFrame(part2, onFrame)
 			expect(receivedFrames).toHaveLength(1)
 			expect(receivedFrames[0]).toEqual(payload)
+		})
+	})
+	describe('M10 transport hardening', () => {
+		it('allocates a fresh IV for every counter value', () => {
+			const first = __testOnly_ivForCounter(7)
+			const second = __testOnly_ivForCounter(7)
+
+			expect(first).not.toBe(second)
+			expect(Array.from(first)).toEqual(Array.from(second))
+
+			first[11] = 99
+			expect(second[11]).toBe(7)
 		})
 	})
 })
