@@ -76,3 +76,9 @@ Si falla el último punto, regenerar y commitear el resultado.
 
 Los PRs automáticos los crea `GITHUB_TOKEN`, así que no disparan los workflows
 de CI por sí mismos; por eso cada workflow corre lint/tests antes de abrirlos.
+
+- `getMintedPreKeyCount` y un warning único por socket avisan cuando el store
+  local de pre-keys supera 1.000 ids. No es un fix de #2797: reclamar claves
+  exige saber qué ids sigue ofreciendo el servidor, y el protocolo solo
+  reporta el conteo. El monitoreo permite detectar el crecimiento y migrar a
+  un store que pueda reconciliar.

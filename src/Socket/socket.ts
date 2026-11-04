@@ -37,6 +37,7 @@ import {
 	getCodeFromWSError,
 	getCompanionPlatformId,
 	getErrorCodeFromStreamError,
+	getMintedPreKeyCount,
 	getNextPreKeysNode,
 	getPreKeyTopUpCount,
 	INITIAL_SYNC_FLUSH_TIMEOUT_MS,
@@ -558,9 +559,19 @@ export const makeSocket = (config: SocketConfig) => {
 		return { exists, currentPreKeyId }
 	}
 
+	let didWarnPreKeyGrowth = false
 	const uploadPreKeysToServerIfRequired = async () => {
 		try {
 			const preKeyCount = await getAvailablePreKeysOnServer()
+			const mintedPreKeys = getMintedPreKeyCount(authState.creds)
+			if (!didWarnPreKeyGrowth && mintedPreKeys > 1_000) {
+				didWarnPreKeyGrowth = true
+				logger.warn(
+					{ mintedPreKeys, serverPreKeys: preKeyCount },
+					'local pre-key store keeps growing; unconsumed keys are never reclaimed (issue #2797)'
+				)
+			}
+
 			const count = getPreKeyTopUpCount(preKeyCount, INITIAL_PREKEY_COUNT, MIN_PREKEY_COUNT)
 			const { exists: currentPreKeyExists, currentPreKeyId } = await verifyCurrentPreKeyExists()
 

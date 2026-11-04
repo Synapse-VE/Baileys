@@ -268,3 +268,6 @@ export const getNextPreKeysNode = async (state: AuthenticationState, count: numb
  */
 export const getPreKeyTopUpCount = (serverCount: number, initialCount: number, minCount: number) =>
 	serverCount <= minCount ? initialCount : 0
+
+/** Number of pre-key ids the account has minted so far, consumed or not. */
+export const getMintedPreKeyCount = (creds: { nextPreKeyId?: number }) => Math.max(0, (creds.nextPreKeyId ?? 0) - 1)
