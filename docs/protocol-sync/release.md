@@ -51,5 +51,9 @@ prereleases, `npm install @synapse-ve/baileys@next` o una versión exacta.
 - Un tag estable (`vX.Y.Z`, sin guion) crea el release con `--latest`.
 - El dist-tag de npm es independiente: los prereleases se publican con
   `--tag next`; solo una versión estable mueve `latest`.
+- Excepción de arranque: como aún no existe una `v7.0.0` estable, `latest`
+  se dejó apuntando a `sync.27` para que `npm install @synapse-ve/baileys`
+  funcione. No se mueve con cada `sync.N`; para el corte más nuevo usar
+  `@next`. La primera `v7.0.0` estable moverá `latest` definitivamente.
 - Por eso, mientras la línea sea `v7.0.0-rc14.sync.N`, la página de Releases
   no muestra un “Latest”; el primer `v7.0.0` estable lo hará.
