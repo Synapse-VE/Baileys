@@ -61,6 +61,7 @@ import { getReceiptTimestampField } from '../Utils/receipts'
 import { incrementRetryCount, incrementSendAgainCount, type RetryCache } from '../Utils/retry-cache'
 import { shouldRetryMessage } from '../Utils/retry-cache'
 import { buildAckStanza } from '../Utils/stanza-ack'
+import { ackStatusNode } from '../Utils/status-ack'
 import {
 	commitTcTokenWithIndex,
 	isTcTokenExpired,
@@ -2008,12 +2009,18 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		}
 	}
 
+	// Some accounts now get contacts' statuses as a top-level <status> stanza
+	// instead of <message from="status@broadcast">. It isn't decoded here, but it
+	// must be acked: the server ends the stream about 50 minutes later otherwise.
+	const handleStatus = (node: BinaryNode) => ackStatusNode(node, sendMessageAck, onUnexpectedError)
+
 	const offlineNodeProcessor = makeOfflineNodeProcessor(
 		new Map<MessageType, (node: BinaryNode) => Promise<void>>([
 			['message', handleMessage],
 			['call', handleCall],
 			['receipt', handleReceipt],
-			['notification', handleNotification]
+			['notification', handleNotification],
+			['status', handleStatus]
 		]),
 		{
 			isWsOpen: () => ws.isOpen,
@@ -2072,11 +2079,13 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		await processNode('notification', node, 'handling notification', handleNotification)
 	})
 
-	// Some accounts now receive contacts' statuses as a top-level <status> stanza
-	// instead of <message from="status@broadcast">. It is not decoded here, but it
-	// must be acked or the server ends the stream about 50 minutes later.
-	ws.on('CB:status', (node: BinaryNode) => {
-		sendMessageAck(node).catch(error => onUnexpectedError(error, 'acking status'))
+	ws.on('CB:status', async (node: BinaryNode) => {
+		// processNode acks ignored JIDs itself, outside handleStatus' try/catch.
+		// Keep the listener catch so that a failed ignored-JID ack is reported
+		// instead of becoming an unhandled rejection.
+		await processNode('status', node, 'acking status stanza', handleStatus).catch(error =>
+			onUnexpectedError(error, 'acking status stanza')
+		)
 	})
 
 	ws.on('CB:ack,class:message', (node: BinaryNode) => {
