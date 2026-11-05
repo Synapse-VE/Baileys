@@ -4,7 +4,7 @@
 > npm install @synapse-ve/baileys
 > ```
 >
-> Para una versión prerelease concreta: `npm install @synapse-ve/baileys@next` o `@7.0.0-rc14.sync.27`.
+> Para una versión prerelease concreta: `npm install @synapse-ve/baileys@next` o `@7.0.0-rc14.sync.28`.
 
 <h1 align='center'><img alt="Baileys logo" src="https://raw.githubusercontent.com/WhiskeySockets/Baileys/refs/heads/master/Media/logo.png" height="75"/></h1>
 
