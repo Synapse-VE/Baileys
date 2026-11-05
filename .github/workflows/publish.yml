@@ -56,7 +56,7 @@ jobs:
           # fetch.
           READY=0
           for attempt in $(seq 1 40); do
-            if curl -fsS "https://registry.npmjs.org/@synapse-ve%2fbaileys?write=true" >/dev/null; then
+            if curl -fsS "https://registry.npmjs.org/@synapse-ve%2fbaileys?write=true" | grep -q "\"${VERSION}\""; then
               READY=1
               break
             fi
