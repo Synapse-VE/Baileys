@@ -3741,13 +3741,11 @@ export namespace proto {
 
     interface IConfig {
         field?: ({ [k: string]: proto.IField }|null);
-        version?: (number|null);
     }
 
     class Config implements IConfig {
         constructor(p?: proto.IConfig);
         public field: { [k: string]: proto.IField };
-        public version?: (number|null);
         public static create(properties?: proto.IConfig): proto.Config;
         public static encode(m: proto.IConfig, w?: $protobuf.Writer): $protobuf.Writer;
         public static decode(r: ($protobuf.Reader|Uint8Array), l?: number): proto.Config;
@@ -5330,7 +5328,6 @@ export namespace proto {
     interface IField {
         minVersion?: (number|null);
         maxVersion?: (number|null);
-        notReportableMinVersion?: (number|null);
         isMessage?: (boolean|null);
         subfield?: ({ [k: string]: proto.IField }|null);
     }
@@ -5339,7 +5336,6 @@ export namespace proto {
         constructor(p?: proto.IField);
         public minVersion?: (number|null);
         public maxVersion?: (number|null);
-        public notReportableMinVersion?: (number|null);
         public isMessage?: (boolean|null);
         public subfield: { [k: string]: proto.IField };
         public static create(properties?: proto.IField): proto.Field;
@@ -13248,28 +13244,6 @@ export namespace proto {
         public static decode(r: ($protobuf.Reader|Uint8Array), l?: number): proto.RecordStructure;
         public static fromObject(d: { [k: string]: any }): proto.RecordStructure;
         public static toObject(m: proto.RecordStructure, o?: $protobuf.IConversionOptions): { [k: string]: any };
-        public toJSON(): { [k: string]: any };
-        public static getTypeUrl(typeUrlPrefix?: string): string;
-    }
-
-    interface IReportable {
-        minVersion?: (number|null);
-        maxVersion?: (number|null);
-        notReportableMinVersion?: (number|null);
-        never?: (boolean|null);
-    }
-
-    class Reportable implements IReportable {
-        constructor(p?: proto.IReportable);
-        public minVersion?: (number|null);
-        public maxVersion?: (number|null);
-        public notReportableMinVersion?: (number|null);
-        public never?: (boolean|null);
-        public static create(properties?: proto.IReportable): proto.Reportable;
-        public static encode(m: proto.IReportable, w?: $protobuf.Writer): $protobuf.Writer;
-        public static decode(r: ($protobuf.Reader|Uint8Array), l?: number): proto.Reportable;
-        public static fromObject(d: { [k: string]: any }): proto.Reportable;
-        public static toObject(m: proto.Reportable, o?: $protobuf.IConversionOptions): { [k: string]: any };
         public toJSON(): { [k: string]: any };
         public static getTypeUrl(typeUrlPrefix?: string): string;
     }
