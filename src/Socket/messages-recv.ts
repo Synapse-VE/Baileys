@@ -58,7 +58,12 @@ import { isOfflineAttr } from '../Utils/offline'
 import { makeOfflineNodeProcessor, type MessageType } from '../Utils/offline-node-processor'
 import { isCompanionRegReady } from '../Utils/pairing'
 import { getReceiptTimestampField } from '../Utils/receipts'
-import { incrementRetryCount, incrementSendAgainCount, type RetryCache } from '../Utils/retry-cache'
+import {
+	incrementRetryCount,
+	incrementSendAgainCount,
+	normalizedRetryCount,
+	type RetryCache
+} from '../Utils/retry-cache'
 import { shouldRetryMessage } from '../Utils/retry-cache'
 import { buildAckStanza } from '../Utils/stanza-ack'
 import { ackStatusNode } from '../Utils/status-ack'
@@ -590,8 +595,17 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		let retryCount: number
 		if (messageRetryManager) {
 			const count = await retryLocks.mutex(retryKey, async () => {
+				const cached = await retryCache.get<number | null>(retryKey)
+				const restored = normalizedRetryCount(cached, maxMsgRetryCount)
+				if (restored === null) {
+					logger.debug({ msgId }, 'retry suppressed by custom cache')
+					return null
+				}
+
+				messageRetryManager.restoreRetryCount(msgId, restored)
+
 				if (messageRetryManager.hasExceededMaxRetries(msgId)) {
-					logger.debug({ msgId }, 'reached retry limit with new retry manager, clearing')
+					logger.debug({ msgId }, 'reached retry limit with new retry manager, preserving cached count')
 					messageRetryManager.markRetryFailed(msgId)
 					return null
 				}

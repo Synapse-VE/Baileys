@@ -3,6 +3,7 @@ import {
 	incrementRetryCount,
 	incrementSendAgainCount,
 	nextRetryCount,
+	normalizedRetryCount,
 	shouldRetryMessage
 } from '../../Utils/retry-cache'
 
@@ -20,6 +21,13 @@ describe('retry cache semantics', () => {
 	it('honours the retry budget', () => {
 		expect(shouldRetryMessage(4, 5)).toBe(true)
 		expect(shouldRetryMessage(5, 5)).toBe(false)
+	})
+
+	it('normalizes persisted counts for the retry manager', () => {
+		expect(normalizedRetryCount(undefined, 5)).toBe(0)
+		expect(normalizedRetryCount(null, 5)).toBeNull()
+		expect(normalizedRetryCount(3, 5)).toBe(3)
+		expect(normalizedRetryCount(Number.NaN, 5)).toBe(5)
 	})
 })
 
@@ -62,6 +70,8 @@ describe('atomic retry counters', () => {
 
 		expect(await incrementRetryCount(cache, 'suppressed', 5, mutex)).toEqual({ status: 'suppressed' })
 		expect(await incrementRetryCount(cache, 'exceeded', 5, mutex)).toEqual({ status: 'exceeded' })
+		// The ceiling is preserved so a restart/reconnect cannot reset it.
+		expect(await cache.get<number>('exceeded')).toBe(5)
 	})
 
 	it('serializes the resend counter too', async () => {
