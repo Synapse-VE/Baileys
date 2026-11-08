@@ -10,6 +10,17 @@ export const shouldRetryMessage = (cached: number | null | undefined, maxRetryCo
 /** Returns null when the cache asks to suppress retries. */
 export const nextRetryCount = (cached: number | null | undefined) => (cached === null ? null : (cached ?? 0) + 1)
 
+/**
+ * Normalize a persisted retry count for the in-memory manager.
+ * undefined = miss (0), null = explicit suppression, non-finite = ceiling.
+ */
+export const normalizedRetryCount = (cached: number | null | undefined, maxRetryCount: number): number | null => {
+	if (cached === null) return null
+	if (cached === undefined) return 0
+	const value = Number(cached)
+	return Number.isFinite(value) ? value : maxRetryCount
+}
+
 export type RetryCache = {
 	get<T>(key: string): Promise<T | undefined>
 	set(key: string, value: number): Promise<void>
@@ -43,7 +54,8 @@ export const incrementRetryCount = (
 		}
 
 		if ((cached ?? 0) >= maxRetryCount) {
-			await cache.del(key)
+			// Preserve the count so a restart/reconnect cannot reset the
+			// retry budget. Null still means "suppress", undefined means miss.
 			return { status: 'exceeded' }
 		}
 

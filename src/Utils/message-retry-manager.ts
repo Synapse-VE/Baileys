@@ -229,6 +229,18 @@ export class MessageRetryManager {
 	}
 
 	/**
+	 * Restore a persisted retry count without lowering an in-memory count.
+	 * Non-finite values are treated as the configured ceiling so a corrupt
+	 * cache entry cannot grant unlimited retries.
+	 */
+	restoreRetryCount(messageId: string, retryCount: number): void {
+		const normalized = Number.isFinite(retryCount) ? retryCount : this.maxMsgRetryCount
+		if (normalized > this.getRetryCount(messageId)) {
+			this.retryCounters.set(messageId, normalized)
+		}
+	}
+
+	/**
 	 * Check if message has exceeded maximum retry attempts
 	 */
 	hasExceededMaxRetries(messageId: string): boolean {

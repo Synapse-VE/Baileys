@@ -29,6 +29,7 @@ describe('fetchLatestBaileysVersion', () => {
 
 		expect(result.version).toHaveLength(3)
 		expect(result.version[0]).toBe(2)
+		expect(result.version[2]).toBe(1_053_614_044)
 		expect(result.isLatest).toBe(false)
 		expect(result.error).toBeDefined()
 	})
