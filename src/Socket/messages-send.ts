@@ -857,7 +857,6 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 						//todo: revamp all this logic
 						// the goal is to follow with what I said above for each group, and instead of a true false map of ids, we can set an array full of those the app has already sent pkmsgs
 						senderKeyRecipients.push(deviceJid)
-						senderKeyMap[deviceJid] = true
 					}
 				}
 
@@ -876,6 +875,14 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 
 					const result = await createParticipantNodes(senderKeyRecipients, senderKeyMsg, extraAttrs)
 					shouldIncludeDeviceIdentity = shouldIncludeDeviceIdentity || result.shouldIncludeDeviceIdentity
+
+					// Only devices whose SKDM actually encrypted count as prepared;
+					// a failed device must get another attempt on the next group send.
+					for (const { attrs } of result.nodes) {
+						if (attrs.jid) {
+							senderKeyMap[attrs.jid] = true
+						}
+					}
 
 					participants.push(...result.nodes)
 				}

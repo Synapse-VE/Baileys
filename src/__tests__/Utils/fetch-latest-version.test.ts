@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { fetchLatestBaileysVersion } from '../../Utils/generics'
 
 describe('fetchLatestBaileysVersion', () => {
@@ -27,9 +28,10 @@ describe('fetchLatestBaileysVersion', () => {
 
 		const result = await fetchLatestBaileysVersion()
 
-		expect(result.version).toHaveLength(3)
-		expect(result.version[0]).toBe(2)
-		expect(result.version[2]).toBe(1_053_614_044)
+		const bundled = JSON.parse(
+			readFileSync(new URL('../../Defaults/baileys-version.json', import.meta.url), 'utf8')
+		).version
+		expect(result.version).toEqual(bundled)
 		expect(result.isLatest).toBe(false)
 		expect(result.error).toBeDefined()
 	})
