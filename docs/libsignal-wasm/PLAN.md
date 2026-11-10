@@ -301,7 +301,7 @@ Esa prueba corre en CI sin compilar Rust.
 ## Estado
 
 ```text
-Fase actual: 1 completada; iniciando 2 (LID/legacy/interop)
+Fase actual: 2 (legacy interop inicial; rollback pendiente)
 Bridge:      construido desde fuente
 QR:          pendiente
 Merge:       prohibido
