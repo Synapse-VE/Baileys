@@ -292,6 +292,10 @@ session: 379 bytes
 Esto valida cifrado, descifrado de prekey, respuesta y persistencia por
 changeset. Todavia no valida el socket real ni el QR.
 
+El bridge construido quedo vendorizado en `vendor/whatsapp-rust-bridge` con su
+procedencia y una prueba real en `src/__tests__/Signal/wasm-snapshot.test.ts`.
+Esa prueba corre en CI sin compilar Rust.
+
 ## Estado
 
 ```text
