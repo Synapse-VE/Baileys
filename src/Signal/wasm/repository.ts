@@ -41,6 +41,18 @@ export type WasmRepositoryDeps = {
 	lidMapping: LIDMappingStore
 }
 
+export type WasmRepositoryDiagnostics = {
+	encrypt: number
+	decrypt: number
+	groupEncrypt: number
+	groupDecrypt: number
+	errors: number
+}
+
+export type WasmSignalRepository = SignalRepositoryWithLIDStore & {
+	getDiagnostics(): WasmRepositoryDiagnostics
+}
+
 const addressForJid = (jid: string, makeAddress: AddressFactory) => {
 	const decoded = jidDecode(jid)
 	if (!decoded?.user) throw new Error(`Invalid JID: ${jid}`)
@@ -90,8 +102,15 @@ export const makeWasmSignalRepository = ({
 	auth,
 	address,
 	lidMapping
-}: WasmRepositoryDeps): SignalRepositoryWithLIDStore => {
+}: WasmRepositoryDeps): WasmSignalRepository => {
 	const store = makeWasmSessionStore(bridge, auth)
+	const diagnostics: WasmRepositoryDiagnostics = {
+		encrypt: 0,
+		decrypt: 0,
+		groupEncrypt: 0,
+		groupDecrypt: 0,
+		errors: 0
+	}
 	const withSenderKey = async <T>(keyId: string, work: () => Promise<T>): Promise<T> => {
 		const keys = auth.keys as Partial<SignalKeyStoreWithRecordTransaction>
 		return keys.transactWith ? keys.transactWith({ records: [{ type: 'sender-key', id: keyId }] }, work) : work()
@@ -110,14 +129,19 @@ export const makeWasmSignalRepository = ({
 	}
 	const senderName = (group: string, meId: string) => new bridge.SenderKeyName(group, addressForJid(meId, address))
 
-	const repository: SignalRepositoryWithLIDStore = {
+	const repository: WasmSignalRepository = {
+		getDiagnostics() {
+			return { ...diagnostics }
+		},
 		async decryptGroupMessage({ group, authorJid, msg }) {
 			const keyId = senderName(group, authorJid).toString()
 			return withSenderKey(keyId, async () => {
+				diagnostics.groupDecrypt++
 				try {
 					const cipher = new bridge.GroupCipher(groupStorage, group, addressForJid(authorJid, address))
 					return await cipher.decrypt(msg)
 				} catch (error) {
+					diagnostics.errors++
 					throw normalizeDecryptError(error)
 				}
 			})
@@ -137,11 +161,13 @@ export const makeWasmSignalRepository = ({
 		async decryptMessage({ jid, type, ciphertext }) {
 			const addr = addressForJid(jid, address)
 			const storageId = await resolveStorageId(jid, address, lidMapping)
+			diagnostics.decrypt++
 			try {
 				return type === 'pkmsg'
 					? await store.decryptPreKey(addr, ciphertext, preKeyIds(ciphertext), storageId)
 					: await store.decryptWhisper(addr, ciphertext, storageId)
 			} catch (error) {
+				diagnostics.errors++
 				throw normalizeDecryptError(error)
 			}
 		},
@@ -151,6 +177,7 @@ export const makeWasmSignalRepository = ({
 		},
 		async encryptGroupMessage({ group, meId, data }) {
 			const name = senderName(group, meId)
+			diagnostics.groupEncrypt++
 			return withSenderKey(name.toString(), async () => {
 				const builder = new bridge.GroupSessionBuilder(groupStorage)
 				const skdm = await builder.create(name)

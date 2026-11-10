@@ -94,6 +94,13 @@ describe('WASM SignalRepository phase 1', () => {
 		expect(repository.jidToSignalProtocolAddress('551100000001:2@s.whatsapp.net')).toBe('551100000001.2')
 		expect(() => repository.close?.()).not.toThrow()
 		expect(() => repository.close?.()).not.toThrow()
+		expect(repository.getDiagnostics()).toEqual({
+			encrypt: 0,
+			decrypt: 0,
+			groupEncrypt: 0,
+			groupDecrypt: 0,
+			errors: 0
+		})
 	})
 
 	it('stores a session under the resolved LID storage id', async () => {
@@ -248,6 +255,7 @@ describe('WASM SignalRepository phase 1', () => {
 		})
 		expect(new TextDecoder().decode(plaintext)).toBe('grupo wasm')
 		expect(await bobRepo.hasSenderKey({ group, meId: aliceJid })).toBe(true)
+		expect(bobRepo.getDiagnostics().groupDecrypt).toBeGreaterThan(0)
 		await expect(bobRepo.decryptGroupMessage({ group, authorJid: aliceJid, msg: first.ciphertext })).rejects.toThrow(
 			'Key used already or never filled'
 		)

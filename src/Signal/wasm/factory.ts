@@ -1,8 +1,7 @@
 import type { LIDMapping, SignalAuthState } from '../../Types'
-import type { SignalRepositoryWithLIDStore } from '../../Types/Signal'
 import type { ILogger } from '../../Utils/logger'
 import { LIDMappingStore } from '../lid-mapping'
-import { makeWasmSignalRepository, type WasmRepositoryDeps } from './repository'
+import { makeWasmSignalRepository, type WasmRepositoryDeps, type WasmSignalRepository } from './repository'
 
 /** Bridge surface needed by the factory, including the address constructor. */
 export type WasmBackendBridge = WasmRepositoryDeps['bridge'] & {
@@ -18,7 +17,7 @@ export const makeWasmSignalRepositoryFactory = (bridge: WasmBackendBridge) => {
 		auth: SignalAuthState,
 		logger: ILogger,
 		pnToLIDFunc?: (jids: string[]) => Promise<LIDMapping[] | undefined>
-	): SignalRepositoryWithLIDStore => {
+	): WasmSignalRepository => {
 		const lidMapping = new LIDMappingStore(auth.keys as never, logger, pnToLIDFunc)
 		return makeWasmSignalRepository({
 			bridge,
