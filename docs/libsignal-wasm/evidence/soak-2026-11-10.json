@@ -1,0 +1,18 @@
+{
+  "date": "2026-11-10",
+  "backend": "wasm phase-1 SignalRepository",
+  "auth": ".tools/auth-wasm (test account, not production)",
+  "targetMinutes": 30,
+  "observed": {
+    "elapsedMinutes": 10,
+    "connection": "open",
+    "reconnects": 0,
+    "closes": 0,
+    "heartbeatSeconds": 60,
+    "messages": 6
+  },
+  "notes": [
+    "No messages were sent by the soak",
+    "No reconnect or close was observed"
+  ]
+}
