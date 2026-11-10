@@ -264,6 +264,36 @@ describe('WASM SignalRepository phase 1', () => {
 		expect(new TextDecoder().decode(replyIn)).toBe('respuesta grupo')
 	})
 
+	it('injects an E2E session bundle and can encrypt with it', async () => {
+		const alice = makeParty()
+		const bob = makeParty()
+		const auth = makeAuth(alice)
+		const repository = makeRepository(auth)
+
+		await repository.injectE2ESession({
+			jid: bobJid,
+			session: {
+				registrationId: bob.registrationId,
+				identityKey: prefixed(bob.identity.public),
+				preKey: { keyId: 1, publicKey: prefixed(bob.preKey.keyPair.pubKey) },
+				signedPreKey: {
+					keyId: 1,
+					publicKey: prefixed(bob.signedPreKey.keyPair.pubKey),
+					signature: bob.signedPreKey.signature
+				}
+			}
+		})
+
+		const sent = await repository.encryptMessage({
+			jid: bobJid,
+			data: new TextEncoder().encode('sesion inyectada')
+		})
+		expect(sent.ciphertext.length).toBeGreaterThan(0)
+		const address = repository.jidToSignalProtocolAddress(bobJid)
+		const stored = await auth.keys.get('session', [address])
+		expect(stored[address]).toBeTruthy()
+	})
+
 	it('clears the old session when the peer identity changes', async () => {
 		const alice = makeParty()
 		const bob = makeParty()
