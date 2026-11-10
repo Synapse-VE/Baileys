@@ -268,6 +268,9 @@ export const makeWasmSignalRepository = ({
 
 			return { migrated, skipped, total: devices.size }
 		},
+		close() {
+			lidMapping.close()
+		},
 		async deleteSession(jids) {
 			if (!jids.length) return
 			const session: Record<string, null> = {}
