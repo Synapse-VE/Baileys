@@ -295,6 +295,44 @@ describe('WASM SignalRepository phase 1', () => {
 		expect(pnSession[bobAddress.toString()]).toBeFalsy()
 	})
 
+	it('migrates every listed device when the source is user-level', async () => {
+		const alice = makeParty()
+		const bob = makeParty()
+		const auth = makeAuth(alice)
+		const repository = makeRepository(auth)
+		const lidJid = '999999999999999@lid'
+		const bundle = {
+			registrationId: bob.registrationId,
+			identityKey: prefixed(bob.identity.public),
+			preKey: { keyId: 1, publicKey: prefixed(bob.preKey.keyPair.pubKey) },
+			signedPreKey: {
+				keyId: 1,
+				publicKey: prefixed(bob.signedPreKey.keyPair.pubKey),
+				signature: bob.signedPreKey.signature
+			}
+		}
+		await auth.keys.set({ 'device-list': { '551100000002': ['0', '2'] } })
+
+		for (const device of [0, 2]) {
+			const address = new bridge.ProtocolAddress('551100000002', device)
+			const pair = await bridge.processBundleWithSnapshot(
+				{ identity: alice.identity, registrationId: alice.registrationId, preKeys: [], signedPreKeys: [] },
+				address,
+				bundle
+			)
+			await auth.keys.set({ session: { [address.toString()]: pair.changes.session! } })
+		}
+
+		expect(await repository.migrateSession(bobJid, lidJid)).toEqual({ migrated: 2, skipped: 0, total: 2 })
+		for (const device of [0, 2]) {
+			const lidAddress = repository.jidToSignalProtocolAddress(
+				device === 0 ? lidJid : `${lidJid.split('@')[0]}:${device}@lid`
+			)
+			const stored = await auth.keys.get('session', [lidAddress])
+			expect(stored[lidAddress]).toBeTruthy()
+		}
+	})
+
 	it('keeps independent sessions for two devices of the same user', async () => {
 		const alice = makeParty()
 		const bob = makeParty()

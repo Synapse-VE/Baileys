@@ -1,7 +1,7 @@
 import { proto } from '../../../WAProto/index.js'
 import type { SignalAuthState, SignalKeyStoreWithRecordTransaction } from '../../Types'
 import type { SignalRepositoryWithLIDStore } from '../../Types/Signal'
-import { jidDecode, WAJIDDomains } from '../../WABinary'
+import { jidDecode, jidEncode, transferDevice, WAJIDDomains } from '../../WABinary'
 import { entryRegistrationId, isLegacySessionRecord, pickOpenLegacySession } from '../legacy-session'
 import { fromTypedRecord } from '../legacy-session-codec'
 import type { LIDMappingStore } from '../lid-mapping'
@@ -197,34 +197,57 @@ export const makeWasmSignalRepository = ({
 			}
 		},
 		async migrateSession(fromJid, toJid) {
-			const fromId = addressForJid(fromJid, address).toString()
-			const toId = addressForJid(toJid, address).toString()
-			if (fromId === toId) return { migrated: 0, skipped: 1, total: 1 }
+			const fromDecoded = jidDecode(fromJid)
+			if (!fromDecoded?.user) return { migrated: 0, skipped: 1, total: 1 }
 
-			const keys = auth.keys as Partial<SignalKeyStoreWithRecordTransaction>
-			const run = async () => {
-				const [fromSession, toSession] = await Promise.all([
-					auth.keys.get('session', [fromId]),
-					auth.keys.get('session', [toId])
-				])
-				const source = fromSession[fromId]
-				if (!source || toSession[toId]) return { migrated: 0, skipped: 1, total: 1 }
+			const migrateOne = async (sourceJid: string, targetJid: string) => {
+				const fromId = addressForJid(sourceJid, address).toString()
+				const toId = addressForJid(targetJid, address).toString()
+				if (fromId === toId) return { migrated: 0, skipped: 1, total: 1 }
 
-				await auth.keys.set({ session: { [toId]: source, [fromId]: null } })
-				return { migrated: 1, skipped: 0, total: 1 }
+				const keys = auth.keys as Partial<SignalKeyStoreWithRecordTransaction>
+				const run = async () => {
+					const [fromSession, toSession] = await Promise.all([
+						auth.keys.get('session', [fromId]),
+						auth.keys.get('session', [toId])
+					])
+					const source = fromSession[fromId]
+					if (!source || toSession[toId]) return { migrated: 0, skipped: 1, total: 1 }
+
+					await auth.keys.set({ session: { [toId]: source, [fromId]: null } })
+					return { migrated: 1, skipped: 0, total: 1 }
+				}
+
+				return keys.transactWith
+					? keys.transactWith(
+							{
+								records: [
+									{ type: 'session', id: fromId },
+									{ type: 'session', id: toId }
+								]
+							},
+							run
+						)
+					: run()
 			}
 
-			return keys.transactWith
-				? keys.transactWith(
-						{
-							records: [
-								{ type: 'session', id: fromId },
-								{ type: 'session', id: toId }
-							]
-						},
-						run
-					)
-				: run()
+			const { [fromDecoded.user]: listedDevices } = await auth.keys.get('device-list', [fromDecoded.user])
+			const devices = new Set<string>([String(fromDecoded.device ?? 0), ...(listedDevices ?? []).map(String)])
+			let migrated = 0
+			let skipped = 0
+
+			for (const device of devices) {
+				const sourceJid =
+					Number(device) === (fromDecoded.device ?? 0)
+						? fromJid
+						: jidEncode(fromDecoded.user, fromDecoded.server, Number(device))
+				const targetJid = transferDevice(sourceJid, toJid)
+				const result = await migrateOne(sourceJid, targetJid)
+				migrated += result.migrated
+				skipped += result.skipped
+			}
+
+			return { migrated, skipped, total: devices.size }
 		},
 		async deleteSession(jids) {
 			if (!jids.length) return
