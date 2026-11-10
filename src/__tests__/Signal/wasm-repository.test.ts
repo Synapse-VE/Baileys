@@ -513,6 +513,18 @@ describe('WASM SignalRepository phase 1', () => {
 		expect(new TextDecoder().decode(plaintext)).toBe('recuperar grupo')
 	})
 
+	it('normalizes unknown bridge failures as Boom errors', async () => {
+		const repository = makeRepository(makeAuth(makeParty()))
+		const error = await repository
+			.decryptMessage({
+				jid: '551100000097@s.whatsapp.net',
+				type: 'msg',
+				ciphertext: Buffer.from('invalid-ciphertext')
+			})
+			.catch(caught => caught)
+		expect(error.output?.statusCode).toBe(500)
+	})
+
 	it('counts an invalid sender-key distribution as a diagnostics error', async () => {
 		const repository = makeRepository(makeAuth(makeParty()))
 		await expect(

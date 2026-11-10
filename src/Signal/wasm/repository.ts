@@ -89,7 +89,7 @@ const normalizeDecryptError = (error: unknown): Error => {
 		return new Boom(MISSING_KEYS_ERROR_TEXT, { data: { cause: message } })
 	}
 
-	return error instanceof Error ? error : new Error(message || 'WASM decrypt failed')
+	return error instanceof Error ? error : new Boom(message || 'WASM decrypt failed', { statusCode: 500 })
 }
 
 const preKeyIds = (ciphertext: Uint8Array): number[] => {
