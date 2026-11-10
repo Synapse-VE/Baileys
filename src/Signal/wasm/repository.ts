@@ -24,6 +24,23 @@ const addressForJid = (jid: string, makeAddress: AddressFactory) => {
 	return makeAddress(signalUser, decoded.device || 0)
 }
 
+const resolveStorageId = async (jid: string, address: AddressFactory, lidMapping: LIDMappingStore) => {
+	const raw = addressForJid(jid, address).toString()
+	if (!raw.includes('.')) return raw
+
+	const [deviceId, device] = raw.split('.')
+	const [user, domainTypeRaw] = deviceId!.split('_')
+	const domainType = Number.parseInt(domainTypeRaw || '0', 10)
+
+	if (domainType === WAJIDDomains.LID || domainType === WAJIDDomains.HOSTED_LID) return raw
+
+	const pnJid = `${user}${device !== '0' ? `:${device}` : ''}@${
+		domainType === WAJIDDomains.HOSTED ? 'hosted' : 's.whatsapp.net'
+	}`
+	const lid = await lidMapping.getLIDForPN(pnJid)
+	return lid ? addressForJid(lid, address).toString() : raw
+}
+
 const preKeyIds = (ciphertext: Uint8Array): number[] => {
 	try {
 		const parsed = proto.PreKeySignalMessage.decode(ciphertext.slice(1))
@@ -49,14 +66,16 @@ export const makeWasmSignalRepository = ({
 		async processSenderKeyDistributionMessage() {
 			throw new Error('WASM sender keys are not implemented in phase 1')
 		},
-		decryptMessage({ jid, type, ciphertext }) {
+		async decryptMessage({ jid, type, ciphertext }) {
 			const addr = addressForJid(jid, address)
+			const storageId = await resolveStorageId(jid, address, lidMapping)
 			return type === 'pkmsg'
-				? store.decryptPreKey(addr, ciphertext, preKeyIds(ciphertext))
-				: store.decryptWhisper(addr, ciphertext)
+				? store.decryptPreKey(addr, ciphertext, preKeyIds(ciphertext), storageId)
+				: store.decryptWhisper(addr, ciphertext, storageId)
 		},
-		encryptMessage({ jid, data }) {
-			return store.encrypt(addressForJid(jid, address), data)
+		async encryptMessage({ jid, data }) {
+			const addr = addressForJid(jid, address)
+			return store.encrypt(addr, data, await resolveStorageId(jid, address, lidMapping))
 		},
 		async encryptGroupMessage() {
 			throw new Error('WASM group encryption is not implemented in phase 1')
@@ -71,14 +90,18 @@ export const makeWasmSignalRepository = ({
 			return null
 		},
 		async injectE2ESession({ jid, session }) {
-			await store.processBundle(addressForJid(jid, address), session as WasmBundle)
+			await store.processBundle(
+				addressForJid(jid, address),
+				session as WasmBundle,
+				await resolveStorageId(jid, address, lidMapping)
+			)
 		},
 		jidToSignalProtocolAddress(jid) {
 			return addressForJid(jid, address).toString()
 		},
 		lidMapping,
 		async validateSession(jid) {
-			const wireId = addressForJid(jid, address).toString()
+			const wireId = await resolveStorageId(jid, address, lidMapping)
 			const { [wireId]: serialized } = await auth.keys.get('session', [wireId])
 			if (!serialized) return { exists: false, reason: 'no session' }
 			if (!bridge.SessionRecord) return { exists: true }
@@ -96,7 +119,7 @@ export const makeWasmSignalRepository = ({
 		async deleteSession(jids) {
 			if (!jids.length) return
 			const session: Record<string, null> = {}
-			for (const jid of jids) session[repository.jidToSignalProtocolAddress(jid)] = null
+			for (const jid of jids) session[await resolveStorageId(jid, address, lidMapping)] = null
 			await auth.keys.set({ session })
 		}
 	}

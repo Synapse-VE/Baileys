@@ -59,8 +59,12 @@ export const makeWasmSessionStore = (bridge: WasmSessionBridge, auth: SignalAuth
 		return result[id] as SignalDataTypeMap[T] | undefined
 	}
 
-	const snapshot = async (address: WasmAddress, preKeyIds: number[] = []): Promise<WasmSnapshot> => {
-		const wireId = address.toString()
+	const snapshot = async (
+		address: WasmAddress,
+		preKeyIds: number[] = [],
+		storageId = address.toString()
+	): Promise<WasmSnapshot> => {
+		const wireId = storageId
 		const [session, peerIdentity, ...preKeys] = await Promise.all([
 			read('session', wireId),
 			read('identity-key', wireId),
@@ -118,33 +122,38 @@ export const makeWasmSessionStore = (bridge: WasmSessionBridge, auth: SignalAuth
 	}
 
 	return {
-		async processBundle(address: WasmAddress, bundle: WasmBundle) {
-			const wireId = address.toString()
-			const out = await bridge.processBundleWithSnapshot(await snapshot(address), address, bundle)
-			await apply(wireId, out.changes)
+		async processBundle(address: WasmAddress, bundle: WasmBundle, storageId = address.toString()) {
+			const out = await bridge.processBundleWithSnapshot(await snapshot(address, [], storageId), address, bundle)
+			await apply(storageId, out.changes)
 		},
 
-		async encrypt(address: WasmAddress, data: Uint8Array) {
-			const wireId = address.toString()
-			const out = await bridge.encryptWithSnapshot(await snapshot(address), address, data)
-			await apply(wireId, out.changes)
+		async encrypt(address: WasmAddress, data: Uint8Array, storageId = address.toString()) {
+			const out = await bridge.encryptWithSnapshot(await snapshot(address, [], storageId), address, data)
+			await apply(storageId, out.changes)
 			return {
 				type: out.messageType === 3 ? ('pkmsg' as const) : ('msg' as const),
 				ciphertext: out.ciphertext
 			}
 		},
 
-		async decryptPreKey(address: WasmAddress, ciphertext: Uint8Array, preKeyIds: number[] = []) {
-			const wireId = address.toString()
-			const out = await bridge.decryptPreKeyWithSnapshot(await snapshot(address, preKeyIds), address, ciphertext)
-			await apply(wireId, out.changes)
+		async decryptPreKey(
+			address: WasmAddress,
+			ciphertext: Uint8Array,
+			preKeyIds: number[] = [],
+			storageId = address.toString()
+		) {
+			const out = await bridge.decryptPreKeyWithSnapshot(
+				await snapshot(address, preKeyIds, storageId),
+				address,
+				ciphertext
+			)
+			await apply(storageId, out.changes)
 			return out.plaintext
 		},
 
-		async decryptWhisper(address: WasmAddress, ciphertext: Uint8Array) {
-			const wireId = address.toString()
-			const out = await bridge.decryptWhisperWithSnapshot(await snapshot(address), address, ciphertext)
-			await apply(wireId, out.changes)
+		async decryptWhisper(address: WasmAddress, ciphertext: Uint8Array, storageId = address.toString()) {
+			const out = await bridge.decryptWhisperWithSnapshot(await snapshot(address, [], storageId), address, ciphertext)
+			await apply(storageId, out.changes)
 			return out.plaintext
 		}
 	}

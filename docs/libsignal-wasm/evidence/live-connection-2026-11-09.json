@@ -9,9 +9,17 @@
     "receipt_status": 3,
     "text": "Prueba WASM 1:1"
   },
-  "inbound": "pending test-account reply from bot",
+  "inbound": {
+    "result": "decrypted",
+    "fromMe": false,
+    "text": "Prueba WASM 1:1",
+    "message_id": "AC0B502CA8B829CEF2E0A19AEB39D5E4",
+    "from": "62415286866108@lid"
+  },
   "notes": [
     "No production credentials were used",
     "Test phone is separate from the official bot phone"
-  ]
+  ],
+  "restart": "socket restarted from saved test auth without QR",
+  "phase1": "1:1 outbound, inbound, receipt and restart verified"
 }
