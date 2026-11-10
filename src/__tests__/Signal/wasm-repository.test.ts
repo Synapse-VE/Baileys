@@ -165,8 +165,10 @@ describe('WASM SignalRepository phase 1', () => {
 	it('creates, distributes and decrypts a group sender key', async () => {
 		const alice = makeParty()
 		const bob = makeParty()
-		const aliceRepo = makeRepository(makeAuth(alice))
-		const bobRepo = makeRepository(makeAuth(bob))
+		const aliceAuth = makeAuth(alice)
+		const bobAuth = makeAuth(bob)
+		const aliceRepo = makeRepository(aliceAuth)
+		const bobRepo = makeRepository(bobAuth)
 		const group = '120363000000000000@g.us'
 
 		const first = await aliceRepo.encryptGroupMessage({
@@ -190,6 +192,19 @@ describe('WASM SignalRepository phase 1', () => {
 		})
 		expect(new TextDecoder().decode(plaintext)).toBe('grupo wasm')
 		expect(await bobRepo.hasSenderKey({ group, meId: aliceJid })).toBe(true)
+
+		const next = await aliceRepo.encryptGroupMessage({
+			group,
+			meId: aliceJid,
+			data: new TextEncoder().encode('grupo tras reinicio')
+		})
+		const restartedBob = makeRepository(bobAuth)
+		const afterRestart = await restartedBob.decryptGroupMessage({
+			group,
+			authorJid: aliceJid,
+			msg: next.ciphertext
+		})
+		expect(new TextDecoder().decode(afterRestart)).toBe('grupo tras reinicio')
 
 		const reply = await bobRepo.encryptGroupMessage({
 			group,
