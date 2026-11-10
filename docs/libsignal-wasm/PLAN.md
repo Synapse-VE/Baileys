@@ -350,3 +350,5 @@ Decision de Fase 0: usar el bridge prebuilt para el PoC 1:1 y construir el
 bridge desde fuente en la fase de build reproducible. No se agrega el bridge
 como dependencia de produccion hasta que el adaptador y las pruebas de
 compatibilidad esten listos.
+
+- Evidencia live inbound de grupo: `evidence/live-group-inbound-2026-11-10.json`.
