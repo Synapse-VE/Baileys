@@ -2,7 +2,13 @@ import type {
 	LegacySessionProjectionV1,
 	LegacySessionRecordV1
 } from '../../../vendor/whatsapp-rust-bridge/pkg/whatsapp_rust_bridge.js'
-import type { SignalAuthState, SignalDataSet, SignalDataTypeMap } from '../../Types'
+import type {
+	RecordRef,
+	SignalAuthState,
+	SignalDataSet,
+	SignalDataTypeMap,
+	SignalKeyStoreWithRecordTransaction
+} from '../../Types'
 import { generateSignalPubKey } from '../../Utils/crypto'
 import { hasOpenLegacySession, isLegacySessionRecord } from '../legacy-session'
 import { fromTypedRecord, toTypedRecord } from '../legacy-session-codec'
@@ -70,6 +76,11 @@ export const makeWasmSessionStore = (bridge: WasmSessionBridge, auth: SignalAuth
 	const read = async <T extends keyof SignalDataTypeMap>(type: T, id: string) => {
 		const result = await auth.keys.get(type, [id])
 		return result[id] as SignalDataTypeMap[T] | undefined
+	}
+
+	const transact = async <T>(records: RecordRef[], work: () => Promise<T>): Promise<T> => {
+		const keys = auth.keys as Partial<SignalKeyStoreWithRecordTransaction>
+		return keys.transactWith ? keys.transactWith({ records }, work) : work()
 	}
 
 	const readSession = async (wireId: string) => {
@@ -155,17 +166,33 @@ export const makeWasmSessionStore = (bridge: WasmSessionBridge, auth: SignalAuth
 
 	return {
 		async processBundle(address: WasmAddress, bundle: WasmBundle, storageId = address.toString()) {
-			const out = await bridge.processBundleWithSnapshot(await snapshot(address, [], storageId), address, bundle)
-			await apply(storageId, out.changes)
+			await transact(
+				[
+					{ type: 'session', id: storageId },
+					{ type: 'identity-key', id: storageId }
+				],
+				async () => {
+					const out = await bridge.processBundleWithSnapshot(await snapshot(address, [], storageId), address, bundle)
+					await apply(storageId, out.changes)
+				}
+			)
 		},
 
 		async encrypt(address: WasmAddress, data: Uint8Array, storageId = address.toString()) {
-			const out = await bridge.encryptWithSnapshot(await snapshot(address, [], storageId), address, data)
-			await apply(storageId, out.changes)
-			return {
-				type: out.messageType === 3 ? ('pkmsg' as const) : ('msg' as const),
-				ciphertext: out.ciphertext
-			}
+			return transact(
+				[
+					{ type: 'session', id: storageId },
+					{ type: 'identity-key', id: storageId }
+				],
+				async () => {
+					const out = await bridge.encryptWithSnapshot(await snapshot(address, [], storageId), address, data)
+					await apply(storageId, out.changes)
+					return {
+						type: out.messageType === 3 ? ('pkmsg' as const) : ('msg' as const),
+						ciphertext: out.ciphertext
+					}
+				}
+			)
 		},
 
 		async decryptPreKey(
@@ -174,19 +201,40 @@ export const makeWasmSessionStore = (bridge: WasmSessionBridge, auth: SignalAuth
 			preKeyIds: number[] = [],
 			storageId = address.toString()
 		) {
-			const out = await bridge.decryptPreKeyWithSnapshot(
-				await snapshot(address, preKeyIds, storageId),
-				address,
-				ciphertext
+			return transact(
+				[
+					{ type: 'session', id: storageId },
+					{ type: 'identity-key', id: storageId },
+					...preKeyIds.map(id => ({ type: 'pre-key' as const, id: String(id) }))
+				],
+				async () => {
+					const out = await bridge.decryptPreKeyWithSnapshot(
+						await snapshot(address, preKeyIds, storageId),
+						address,
+						ciphertext
+					)
+					await apply(storageId, out.changes)
+					return out.plaintext
+				}
 			)
-			await apply(storageId, out.changes)
-			return out.plaintext
 		},
 
 		async decryptWhisper(address: WasmAddress, ciphertext: Uint8Array, storageId = address.toString()) {
-			const out = await bridge.decryptWhisperWithSnapshot(await snapshot(address, [], storageId), address, ciphertext)
-			await apply(storageId, out.changes)
-			return out.plaintext
+			return transact(
+				[
+					{ type: 'session', id: storageId },
+					{ type: 'identity-key', id: storageId }
+				],
+				async () => {
+					const out = await bridge.decryptWhisperWithSnapshot(
+						await snapshot(address, [], storageId),
+						address,
+						ciphertext
+					)
+					await apply(storageId, out.changes)
+					return out.plaintext
+				}
+			)
 		}
 	}
 }
