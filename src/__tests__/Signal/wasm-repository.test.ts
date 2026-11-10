@@ -179,6 +179,10 @@ describe('WASM SignalRepository phase 1', () => {
 		})
 		expect(new TextDecoder().decode(plaintext)).toBe('repo hola')
 
+		await expect(bobRepo.decryptMessage({ jid: aliceJid, type: 'pkmsg', ciphertext: sent.ciphertext })).rejects.toThrow(
+			'Key used already or never filled'
+		)
+
 		const sessionInfo = await bobRepo.getSessionInfo(aliceJid)
 		expect(sessionInfo?.registrationId).toBe(alice.registrationId)
 		expect(sessionInfo?.baseKey.length).toBeGreaterThan(0)

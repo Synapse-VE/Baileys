@@ -1,6 +1,8 @@
+import { Boom } from '@hapi/boom'
 import { proto } from '../../../WAProto/index.js'
 import type { SignalAuthState, SignalKeyStoreWithRecordTransaction } from '../../Types'
 import type { SignalRepositoryWithLIDStore } from '../../Types/Signal'
+import { MISSING_KEYS_ERROR_TEXT } from '../../Utils/decode-wa-message'
 import { jidDecode, jidEncode, transferDevice, WAJIDDomains } from '../../WABinary'
 import { entryRegistrationId, isLegacySessionRecord, pickOpenLegacySession } from '../legacy-session'
 import { fromTypedRecord } from '../legacy-session-codec'
@@ -64,6 +66,15 @@ const resolveStorageId = async (jid: string, address: AddressFactory, lidMapping
 	return lid ? addressForJid(lid, address).toString() : raw
 }
 
+const normalizeDecryptError = (error: unknown): Error => {
+	const message = typeof error === 'string' ? error : error instanceof Error ? error.message : ''
+	if (message.includes('DuplicatedMessage')) {
+		return new Boom(MISSING_KEYS_ERROR_TEXT, { data: { cause: message } })
+	}
+
+	return error instanceof Error ? error : new Error(message || 'WASM decrypt failed')
+}
+
 const preKeyIds = (ciphertext: Uint8Array): number[] => {
 	try {
 		const parsed = proto.PreKeySignalMessage.decode(ciphertext.slice(1))
@@ -122,9 +133,13 @@ export const makeWasmSignalRepository = ({
 		async decryptMessage({ jid, type, ciphertext }) {
 			const addr = addressForJid(jid, address)
 			const storageId = await resolveStorageId(jid, address, lidMapping)
-			return type === 'pkmsg'
-				? store.decryptPreKey(addr, ciphertext, preKeyIds(ciphertext), storageId)
-				: store.decryptWhisper(addr, ciphertext, storageId)
+			try {
+				return type === 'pkmsg'
+					? await store.decryptPreKey(addr, ciphertext, preKeyIds(ciphertext), storageId)
+					: await store.decryptWhisper(addr, ciphertext, storageId)
+			} catch (error) {
+				throw normalizeDecryptError(error)
+			}
 		},
 		async encryptMessage({ jid, data }) {
 			const addr = addressForJid(jid, address)
