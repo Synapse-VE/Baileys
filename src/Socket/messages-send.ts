@@ -503,15 +503,16 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 
 		logger.debug({ jids }, 'assertSessions call with jids')
 
-		for (const jid of uniqueJids) {
-			if (!force) {
+		const sessionChecks = await Promise.all(
+			uniqueJids.map(async jid => {
+				if (force) return false
 				const sessionValidation = await signalRepository.validateSession(jid)
-				if (sessionValidation.exists) {
-					continue
-				}
-			}
+				return sessionValidation.exists
+			})
+		)
 
-			jidsRequiringFetch.push(jid)
+		for (const [index, jid] of uniqueJids.entries()) {
+			if (!sessionChecks[index]) jidsRequiringFetch.push(jid)
 		}
 
 		if (jidsRequiringFetch.length) {
