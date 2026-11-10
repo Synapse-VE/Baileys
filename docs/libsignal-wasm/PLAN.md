@@ -274,3 +274,37 @@ QR: no solicitado
 Merge: prohibido
 Produccion: intacta
 ```
+
+## Baseline de Fase 0 (2026-11-09)
+
+```text
+Suites:    75/75
+Tests:     640/640
+Proto:     9/9
+Lint:      0 errores
+Build:     OK
+```
+
+Bridge prebuilt:
+
+```text
+whatsapp-rust-bridge@0.6.0-alpha.44
+2.2 MB
+44 exports cargados en Node 26
+initWasmEngine requiere logger/crypto
+```
+
+Toolchain local:
+
+```text
+rustc 1.99.1
+cargo 1.99.1
+wasm32-unknown-unknown: no instalado
+wasm-pack: no instalado
+wasm-bindgen: no instalado
+```
+
+Decision de Fase 0: usar el bridge prebuilt para el PoC 1:1 y dejar la
+compilacion reproducible desde fuente para la fase de build del core. No se
+agrega el bridge como dependencia de produccion hasta que el adaptador y las
+pruebas de compatibilidad esten listos.
