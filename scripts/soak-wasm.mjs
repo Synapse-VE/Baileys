@@ -59,10 +59,9 @@ const connect = async () => {
 					at: new Date().toISOString(),
 					groupMessage: true,
 					from: message.key.remoteJid,
-					participant: message.key.participant,
 					fromMe: message.key.fromMe,
 					id: message.key.id,
-					text
+					textLength: text.length
 				})
 			)
 		}
