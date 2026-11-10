@@ -4,7 +4,7 @@
   "auth": ".tools/auth-wasm (test account, not production)",
   "targetMinutes": 30,
   "observed": {
-    "elapsedMinutes": 10,
+    "elapsedMinutes": 30,
     "connection": "open",
     "reconnects": 0,
     "closes": 0,
@@ -14,5 +14,7 @@
   "notes": [
     "No messages were sent by the soak",
     "No reconnect or close was observed"
-  ]
+  ],
+  "completed": true,
+  "result": "30-minute soak completed with a single connect and no reconnects"
 }
