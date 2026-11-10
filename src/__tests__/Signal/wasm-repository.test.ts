@@ -213,6 +213,12 @@ describe('WASM SignalRepository phase 1', () => {
 		const bobRepo = makeRepository(bobAuth)
 		const group = '120363000000000000@g.us'
 
+		const standaloneSkdm = await aliceRepo.getSenderKeyDistributionMessage({
+			group,
+			meId: aliceJid
+		})
+		expect(standaloneSkdm.length).toBeGreaterThan(0)
+
 		const first = await aliceRepo.encryptGroupMessage({
 			group,
 			meId: aliceJid,
