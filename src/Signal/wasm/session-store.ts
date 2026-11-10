@@ -114,7 +114,7 @@ export const makeWasmSessionStore = (bridge: WasmSessionBridge, auth: SignalAuth
 			},
 			registrationId: auth.creds.registrationId,
 			session,
-			peerIdentity: peerIdentity as Uint8Array | undefined,
+			peerIdentity: peerIdentity,
 			preKeys: preKeys.flatMap(({ id, value }) =>
 				value ? [{ id, keyPair: { public: value.public, private: value.private } }] : []
 			),

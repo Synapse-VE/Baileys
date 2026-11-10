@@ -1,9 +1,11 @@
 import { readFileSync } from 'node:fs'
 import P from 'pino'
 import * as bridge from '../../../vendor/whatsapp-rust-bridge/pkg/whatsapp_rust_bridge.js'
+import { makeLibSignalRepository } from '../../Signal/libsignal'
 import { LIDMappingStore } from '../../Signal/lid-mapping'
 import { makeWasmSignalRepository } from '../../Signal/wasm/repository'
 import type { SignalAuthState, SignalDataTypeMap } from '../../Types'
+import { addTransactionCapability } from '../../Utils/auth-utils'
 
 bridge.initSync({
 	module: readFileSync(
@@ -65,7 +67,10 @@ const makeAuth = (party: ReturnType<typeof makeParty>): SignalAuthState => {
 			},
 			registrationId: party.registrationId
 		},
-		keys
+		keys: addTransactionCapability(keys, P({ level: 'silent' }), {
+			maxCommitRetries: 1,
+			delayBetweenTriesMs: 1
+		})
 	} as unknown as SignalAuthState
 }
 
@@ -136,5 +141,54 @@ describe('WASM SignalRepository phase 1', () => {
 		})
 		expect(new TextDecoder().decode(replyIn)).toBe('repo respuesta')
 		expect(aliceAddress.toString()).toBe('551100000001.0')
+	})
+
+	it('lets the legacy JS repository read a session advanced by WASM', async () => {
+		const alice = makeParty()
+		const bob = makeParty()
+		const aliceAuth = makeAuth(alice)
+		const bobAuth = makeAuth(bob)
+		const aliceRepo = makeRepository(aliceAuth)
+		const bobRepo = makeRepository(bobAuth)
+		const bobAddress = new bridge.ProtocolAddress('551100000002', 0)
+
+		const pair = await bridge.processBundleWithSnapshot(
+			{
+				identity: alice.identity,
+				registrationId: alice.registrationId,
+				preKeys: [],
+				signedPreKeys: []
+			},
+			bobAddress,
+			{
+				registrationId: bob.registrationId,
+				identityKey: prefixed(bob.identity.public),
+				preKey: { keyId: 1, publicKey: prefixed(bob.preKey.keyPair.pubKey) },
+				signedPreKey: {
+					keyId: 1,
+					publicKey: prefixed(bob.signedPreKey.keyPair.pubKey),
+					signature: bob.signedPreKey.signature
+				}
+			}
+		)
+		await aliceAuth.keys.set({ session: { [bobAddress.toString()]: pair.changes.session! } })
+
+		const first = await aliceRepo.encryptMessage({ jid: bobJid, data: new TextEncoder().encode('first wasm') })
+		await bobRepo.decryptMessage({ jid: aliceJid, type: 'pkmsg', ciphertext: first.ciphertext })
+
+		const ack = await bobRepo.encryptMessage({ jid: aliceJid, data: new TextEncoder().encode('ack') })
+		await aliceRepo.decryptMessage({ jid: bobJid, type: ack.type, ciphertext: ack.ciphertext })
+
+		const second = await aliceRepo.encryptMessage({ jid: bobJid, data: new TextEncoder().encode('legacy reads this') })
+		expect(second.type).toBe('msg')
+
+		const legacyBob = makeLibSignalRepository(bobAuth, P({ level: 'silent' }))
+		const plaintext = await legacyBob.decryptMessage({
+			jid: aliceJid,
+			type: 'msg',
+			ciphertext: Buffer.from(second.ciphertext)
+		})
+		expect(new TextDecoder().decode(plaintext)).toBe('legacy reads this')
+		legacyBob.close?.()
 	})
 })
