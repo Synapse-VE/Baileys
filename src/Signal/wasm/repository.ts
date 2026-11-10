@@ -68,7 +68,7 @@ const resolveStorageId = async (jid: string, address: AddressFactory, lidMapping
 
 const normalizeDecryptError = (error: unknown): Error => {
 	const message = typeof error === 'string' ? error : error instanceof Error ? error.message : ''
-	if (message.includes('DuplicatedMessage')) {
+	if (message.includes('DuplicatedMessage') || message.includes('old counter')) {
 		return new Boom(MISSING_KEYS_ERROR_TEXT, { data: { cause: message } })
 	}
 
@@ -114,8 +114,12 @@ export const makeWasmSignalRepository = ({
 		async decryptGroupMessage({ group, authorJid, msg }) {
 			const keyId = senderName(group, authorJid).toString()
 			return withSenderKey(keyId, async () => {
-				const cipher = new bridge.GroupCipher(groupStorage, group, addressForJid(authorJid, address))
-				return cipher.decrypt(msg)
+				try {
+					const cipher = new bridge.GroupCipher(groupStorage, group, addressForJid(authorJid, address))
+					return await cipher.decrypt(msg)
+				} catch (error) {
+					throw normalizeDecryptError(error)
+				}
 			})
 		},
 		async processSenderKeyDistributionMessage({ item, authorJid }) {

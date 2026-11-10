@@ -240,6 +240,9 @@ describe('WASM SignalRepository phase 1', () => {
 		})
 		expect(new TextDecoder().decode(plaintext)).toBe('grupo wasm')
 		expect(await bobRepo.hasSenderKey({ group, meId: aliceJid })).toBe(true)
+		await expect(bobRepo.decryptGroupMessage({ group, authorJid: aliceJid, msg: first.ciphertext })).rejects.toThrow(
+			'Key used already or never filled'
+		)
 
 		const next = await aliceRepo.encryptGroupMessage({
 			group,
