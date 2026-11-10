@@ -301,7 +301,7 @@ Esa prueba corre en CI sin compilar Rust.
 ## Estado
 
 ```text
-Fase actual: 1 (store 1:1 sobre bridge; QR pendiente)
+Fase actual: 1 (socket 1:1 conectado; inbound pendiente)
 Bridge:      construido desde fuente
 QR:          pendiente
 Merge:       prohibido
