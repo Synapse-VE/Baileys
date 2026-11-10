@@ -447,6 +447,37 @@ describe('WASM SignalRepository phase 1', () => {
 		expect(stored[address]).toBeTruthy()
 	})
 
+	it('recovers a group message after the sender key is distributed', async () => {
+		const group = '120363000000000001@g.us'
+		const alice = makeParty()
+		const bob = makeParty()
+		const aliceRepo = makeRepository(makeAuth(alice))
+		const bobRepo = makeRepository(makeAuth(bob))
+		const sent = await aliceRepo.encryptGroupMessage({
+			group,
+			meId: aliceJid,
+			data: new TextEncoder().encode('recuperar grupo')
+		})
+
+		await expect(
+			bobRepo.decryptGroupMessage({ group, authorJid: aliceJid, msg: sent.ciphertext })
+		).rejects.toBeDefined()
+
+		await bobRepo.processSenderKeyDistributionMessage({
+			item: {
+				groupId: group,
+				axolotlSenderKeyDistributionMessage: sent.senderKeyDistributionMessage
+			},
+			authorJid: aliceJid
+		})
+		const plaintext = await bobRepo.decryptGroupMessage({
+			group,
+			authorJid: aliceJid,
+			msg: sent.ciphertext
+		})
+		expect(new TextDecoder().decode(plaintext)).toBe('recuperar grupo')
+	})
+
 	it('clears the old session when the peer identity changes', async () => {
 		const alice = makeParty()
 		const bob = makeParty()
