@@ -456,6 +456,31 @@ describe('WASM SignalRepository phase 1', () => {
 		expect(stored[address]).toBeTruthy()
 	})
 
+	it('encrypts and decrypts a group addressed by LID', async () => {
+		const group = '120363000000000002@g.us'
+		const aliceLid = '999999999999999@lid'
+		const alice = makeParty()
+		const bob = makeParty()
+		const aliceRepo = makeRepository(makeAuth(alice))
+		const bobRepo = makeRepository(makeAuth(bob))
+		const sent = await aliceRepo.encryptGroupMessage({
+			group,
+			meId: aliceLid,
+			data: new TextEncoder().encode('grupo lid')
+		})
+
+		await bobRepo.processSenderKeyDistributionMessage({
+			item: { groupId: group, axolotlSenderKeyDistributionMessage: sent.senderKeyDistributionMessage },
+			authorJid: aliceLid
+		})
+		const plaintext = await bobRepo.decryptGroupMessage({
+			group,
+			authorJid: aliceLid,
+			msg: sent.ciphertext
+		})
+		expect(new TextDecoder().decode(plaintext)).toBe('grupo lid')
+	})
+
 	it('recovers a group message after the sender key is distributed', async () => {
 		const group = '120363000000000001@g.us'
 		const alice = makeParty()
