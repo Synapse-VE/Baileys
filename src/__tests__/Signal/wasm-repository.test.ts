@@ -149,6 +149,9 @@ describe('WASM SignalRepository phase 1', () => {
 		})
 		expect(new TextDecoder().decode(replyIn)).toBe('repo respuesta')
 		expect(aliceAddress.toString()).toBe('551100000001.0')
+
+		await aliceRepo.deleteSession([bobJid])
+		expect(await aliceRepo.validateSession(bobJid)).toEqual({ exists: false, reason: 'no session' })
 	})
 
 	it('creates, distributes and decrypts a group sender key', async () => {
@@ -178,6 +181,7 @@ describe('WASM SignalRepository phase 1', () => {
 			msg: first.ciphertext
 		})
 		expect(new TextDecoder().decode(plaintext)).toBe('grupo wasm')
+		expect(await bobRepo.hasSenderKey({ group, meId: aliceJid })).toBe(true)
 
 		const reply = await bobRepo.encryptGroupMessage({
 			group,
