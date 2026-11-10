@@ -41,6 +41,7 @@ import { getUrlInfo } from '../Utils/link-preview'
 import { makeKeyedMutex, makeMutex } from '../Utils/make-mutex'
 import { getMessageReportingToken, shouldIncludeReportingToken } from '../Utils/reporting-utils'
 import { hasUsableSenderKey } from '../Utils/sender-key'
+import { findJidsWithoutSession } from '../Utils/session-validation'
 import {
 	commitTcTokenWithIndex,
 	isTcTokenExpired,
@@ -499,27 +500,12 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 	const assertSessions = async (jids: string[], force?: boolean) => {
 		let didFetchNewSession = false
 		const uniqueJids = [...new Set(jids)]
-		const jidsRequiringFetch: string[] = []
 
 		logger.debug({ jids }, 'assertSessions call with jids')
 
-		const sessionChecks: boolean[] = []
-		const validationBatchSize = 100
-		for (let index = 0; index < uniqueJids.length; index += validationBatchSize) {
-			const batch = uniqueJids.slice(index, index + validationBatchSize)
-			const checks = await Promise.all(
-				batch.map(async jid => {
-					if (force) return false
-					const sessionValidation = await signalRepository.validateSession(jid)
-					return sessionValidation.exists
-				})
-			)
-			sessionChecks.push(...checks)
-		}
-
-		for (const [index, jid] of uniqueJids.entries()) {
-			if (!sessionChecks[index]) jidsRequiringFetch.push(jid)
-		}
+		const jidsRequiringFetch = await findJidsWithoutSession(uniqueJids, jid => signalRepository.validateSession(jid), {
+			force
+		})
 
 		if (jidsRequiringFetch.length) {
 			// LID if mapped, otherwise original
