@@ -3,6 +3,7 @@ import P from 'pino'
 import * as bridge from '../../../vendor/whatsapp-rust-bridge/pkg/whatsapp_rust_bridge.js'
 import { makeLibSignalRepository } from '../../Signal/libsignal'
 import { LIDMappingStore } from '../../Signal/lid-mapping'
+import { makeWasmSignalRepositoryFactory } from '../../Signal/wasm/factory'
 import { makeWasmSignalRepository } from '../../Signal/wasm/repository'
 import type { SignalAuthState, SignalDataTypeMap } from '../../Types'
 import { addTransactionCapability } from '../../Utils/auth-utils'
@@ -86,6 +87,13 @@ const makeRepository = (auth: SignalAuthState) =>
 	})
 
 describe('WASM SignalRepository phase 1', () => {
+	it('builds a repository through the socket factory shape', () => {
+		const auth = makeAuth(makeParty())
+		const factory = makeWasmSignalRepositoryFactory(bridge as never)
+		const repository = factory(auth, P({ level: 'silent' }))
+		expect(repository.jidToSignalProtocolAddress('551100000001:2@s.whatsapp.net')).toBe('551100000001.2')
+	})
+
 	it('routes JID 1:1 messages through the snapshot store', async () => {
 		const alice = makeParty()
 		const bob = makeParty()
