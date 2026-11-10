@@ -62,10 +62,14 @@ Requiere que el auth de prueba ya este vinculado.
 
 ## Soak
 
+Runner reproducible del repo:
+
 ```bash
-node .tools/wasm-soak.mjs     # 30 minutos
-node .tools/wasm-soak-2h.mjs  # 2 horas
+npm run soak:wasm -- --auth .tools/auth-wasm --minutes 120
+npm run soak:wasm -- --auth .tools/auth-wasm --minutes 1440
 ```
+
+Reconecta solo, registra mensajes de grupo y no envia mensajes.
 
 Logs:
 
