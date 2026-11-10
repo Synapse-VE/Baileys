@@ -355,6 +355,15 @@ describe('WASM SignalRepository phase 1', () => {
 		}
 	})
 
+	it('skips migration when the source session does not exist', async () => {
+		const repository = makeRepository(makeAuth(makeParty()))
+		expect(await repository.migrateSession('551100000099@s.whatsapp.net', '999999999999998@lid')).toEqual({
+			migrated: 0,
+			skipped: 1,
+			total: 1
+		})
+	})
+
 	it('keeps independent sessions for two devices of the same user', async () => {
 		const alice = makeParty()
 		const bob = makeParty()
