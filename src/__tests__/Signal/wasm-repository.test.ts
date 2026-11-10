@@ -355,6 +355,11 @@ describe('WASM SignalRepository phase 1', () => {
 		}
 	})
 
+	it('returns null session info when no session exists', async () => {
+		const repository = makeRepository(makeAuth(makeParty()))
+		expect(await repository.getSessionInfo('551100000098@s.whatsapp.net')).toBeNull()
+	})
+
 	it('skips migration when the source session does not exist', async () => {
 		const repository = makeRepository(makeAuth(makeParty()))
 		expect(await repository.migrateSession('551100000099@s.whatsapp.net', '999999999999998@lid')).toEqual({
