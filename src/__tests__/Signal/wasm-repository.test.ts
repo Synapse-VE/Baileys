@@ -33,13 +33,16 @@ const makeAuth = (party: ReturnType<typeof makeParty>): SignalAuthState => {
 		get<T extends keyof SignalDataTypeMap>(type: T, ids: string[]) {
 			const out: Record<string, unknown> = {}
 			for (const id of ids) {
-				if (type === 'pre-key' && id === '1') {
+				const stored = values.get(`${type}:${id}`)
+				if (stored !== undefined) {
+					out[id] = stored
+				} else if (type === 'pre-key' && id === '1') {
 					out[id] = {
 						public: party.preKey.keyPair.pubKey,
 						private: party.preKey.keyPair.privKey
 					}
 				} else {
-					out[id] = values.get(`${type}:${id}`)
+					out[id] = stored
 				}
 			}
 
@@ -115,6 +118,7 @@ describe('WASM SignalRepository phase 1', () => {
 		await aliceAuth.keys.set({ session: { [bobAddress.toString()]: pair.changes.session! } })
 
 		expect(await aliceRepo.validateSession(bobJid)).toEqual({ exists: true })
+		expect(aliceRepo.jidToSignalProtocolAddress('551100000001:2@s.whatsapp.net')).toBe('551100000001.2')
 
 		const sent = await aliceRepo.encryptMessage({
 			jid: bobJid,

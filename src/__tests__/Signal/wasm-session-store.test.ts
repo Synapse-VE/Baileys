@@ -30,13 +30,16 @@ const makeAuth = (party: Party): SignalAuthState => {
 		get<T extends keyof SignalDataTypeMap>(type: T, ids: string[]) {
 			const out: Record<string, unknown> = {}
 			for (const id of ids) {
-				if (type === 'pre-key' && id === '1') {
+				const stored = store.get(`${type}:${id}`)
+				if (stored !== undefined) {
+					out[id] = stored
+				} else if (type === 'pre-key' && id === '1') {
 					out[id] = {
 						public: party.preKey.keyPair.pubKey,
 						private: party.preKey.keyPair.privKey
 					}
 				} else {
-					out[id] = store.get(`${type}:${id}`)
+					out[id] = stored
 				}
 			}
 
@@ -105,6 +108,8 @@ describe('WASM session store', () => {
 
 		const received = await bobStore.decryptPreKey(aliceAddress, sent.ciphertext, [1])
 		expect(new TextDecoder().decode(received)).toBe('hola store')
+		const remainingPreKey = await bobAuth.keys.get('pre-key', ['1'])
+		expect(remainingPreKey['1']).toBeNull()
 
 		// New store instance, same auth state: the session must survive.
 		const restartedBob = makeWasmSessionStore(bridge as never, bobAuth)
