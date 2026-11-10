@@ -294,17 +294,24 @@ whatsapp-rust-bridge@0.6.0-alpha.44
 initWasmEngine requiere logger/crypto
 ```
 
-Toolchain local:
+Toolchain local (instalada en `.tools/`, fuera de git):
 
 ```text
 rustc 1.99.1
 cargo 1.99.1
-wasm32-unknown-unknown: no instalado
-wasm-pack: no instalado
-wasm-bindgen: no instalado
+wasm32-unknown-unknown: instalado
+wasm-pack 0.15.1: via npx
 ```
 
-Decision de Fase 0: usar el bridge prebuilt para el PoC 1:1 y dejar la
-compilacion reproducible desde fuente para la fase de build del core. No se
-agrega el bridge como dependencia de produccion hasta que el adaptador y las
-pruebas de compatibilidad esten listos.
+Smoke de compilacion:
+
+```text
+crate Rust -> .wasm de 325 bytes
+WebAssembly.Module carga en Node
+export: add, memory
+```
+
+Decision de Fase 0: usar el bridge prebuilt para el PoC 1:1 y construir el
+bridge desde fuente en la fase de build reproducible. No se agrega el bridge
+como dependencia de produccion hasta que el adaptador y las pruebas de
+compatibilidad esten listos.
