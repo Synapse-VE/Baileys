@@ -94,6 +94,44 @@ describe('WASM SignalRepository phase 1', () => {
 		expect(repository.jidToSignalProtocolAddress('551100000001:2@s.whatsapp.net')).toBe('551100000001.2')
 	})
 
+	it('stores a session under the resolved LID storage id', async () => {
+		const alice = makeParty()
+		const bob = makeParty()
+		const aliceAuth = makeAuth(alice)
+		const lidJid = '999999999999999@lid'
+		const lidAddress = new bridge.ProtocolAddress('999999999999999', 0)
+		const mapping = new LIDMappingStore(aliceAuth.keys as never, P({ level: 'silent' }))
+		await mapping.storeLIDPNMappings([{ pn: bobJid, lid: lidJid }])
+		expect(await mapping.getLIDForPN(bobJid)).toBe(lidJid)
+		const repository = makeWasmSignalRepository({
+			bridge: bridge as never,
+			auth: aliceAuth,
+			address: (user, device) => new bridge.ProtocolAddress(user, device),
+			lidMapping: mapping
+		})
+
+		const pair = await bridge.processBundleWithSnapshot(
+			{ identity: alice.identity, registrationId: alice.registrationId, preKeys: [], signedPreKeys: [] },
+			lidAddress,
+			{
+				registrationId: bob.registrationId,
+				identityKey: prefixed(bob.identity.public),
+				preKey: { keyId: 1, publicKey: prefixed(bob.preKey.keyPair.pubKey) },
+				signedPreKey: {
+					keyId: 1,
+					publicKey: prefixed(bob.signedPreKey.keyPair.pubKey),
+					signature: bob.signedPreKey.signature
+				}
+			}
+		)
+		const lidStorageId = repository.jidToSignalProtocolAddress(lidJid)
+		await aliceAuth.keys.set({ session: { [lidStorageId]: pair.changes.session! } })
+
+		await repository.encryptMessage({ jid: bobJid, data: new TextEncoder().encode('lid storage') })
+		const stored = await aliceAuth.keys.get('session', [lidStorageId])
+		expect(stored[lidStorageId]).toBeTruthy()
+	})
+
 	it('routes JID 1:1 messages through the snapshot store', async () => {
 		const alice = makeParty()
 		const bob = makeParty()
