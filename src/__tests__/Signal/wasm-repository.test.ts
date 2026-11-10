@@ -264,6 +264,49 @@ describe('WASM SignalRepository phase 1', () => {
 		expect(new TextDecoder().decode(replyIn)).toBe('respuesta grupo')
 	})
 
+	it('keeps independent sessions for two devices of the same user', async () => {
+		const alice = makeParty()
+		const bob = makeParty()
+		const auth = makeAuth(alice)
+		const repository = makeRepository(auth)
+		const devices = [new bridge.ProtocolAddress('551100000002', 0), new bridge.ProtocolAddress('551100000002', 2)]
+		const bundle = {
+			registrationId: bob.registrationId,
+			identityKey: prefixed(bob.identity.public),
+			preKey: { keyId: 1, publicKey: prefixed(bob.preKey.keyPair.pubKey) },
+			signedPreKey: {
+				keyId: 1,
+				publicKey: prefixed(bob.signedPreKey.keyPair.pubKey),
+				signature: bob.signedPreKey.signature
+			}
+		}
+
+		for (const device of devices) {
+			const pair = await bridge.processBundleWithSnapshot(
+				{ identity: alice.identity, registrationId: alice.registrationId, preKeys: [], signedPreKeys: [] },
+				device,
+				bundle
+			)
+			await auth.keys.set({ session: { [device.toString()]: pair.changes.session! } })
+		}
+
+		const primary = await repository.encryptMessage({
+			jid: bobJid,
+			data: new TextEncoder().encode('device 0')
+		})
+		const linked = await repository.encryptMessage({
+			jid: '551100000002:2@s.whatsapp.net',
+			data: new TextEncoder().encode('device 2')
+		})
+		expect(primary.ciphertext).not.toEqual(linked.ciphertext)
+		const addresses = [
+			repository.jidToSignalProtocolAddress(bobJid),
+			repository.jidToSignalProtocolAddress('551100000002:2@s.whatsapp.net')
+		]
+		const stored = await auth.keys.get('session', addresses)
+		for (const address of addresses) expect(stored[address]).toBeTruthy()
+	})
+
 	it('injects an E2E session bundle and can encrypt with it', async () => {
 		const alice = makeParty()
 		const bob = makeParty()
