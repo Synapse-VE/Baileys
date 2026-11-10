@@ -3861,6 +3861,7 @@ export namespace proto {
         partnerDeepLinkToken?: (string|null);
         sourceExperienceId?: (number|null);
         sourceExperienceIds?: (number[]|null);
+        foaMutualsSignature?: (Uint8Array|null);
     }
 
     class ContextInfo implements IContextInfo {
@@ -3933,6 +3934,7 @@ export namespace proto {
         public partnerDeepLinkToken?: (string|null);
         public sourceExperienceId?: (number|null);
         public sourceExperienceIds: number[];
+        public foaMutualsSignature?: (Uint8Array|null);
         public static create(properties?: proto.IContextInfo): proto.ContextInfo;
         public static encode(m: proto.IContextInfo, w?: $protobuf.Writer): $protobuf.Writer;
         public static decode(r: ($protobuf.Reader|Uint8Array), l?: number): proto.ContextInfo;
@@ -11830,8 +11832,6 @@ export namespace proto {
         interface IVpcRequestMessage {
             payloadSchemaVersion?: (number|null);
             requestId?: (string|null);
-            launchRef?: (string|null);
-            invitationExpiresAtMs?: (number|Long|null);
             scopeHint?: (proto.Message.VpcRequestMessage.ScopeHint|null);
         }
 
@@ -11839,8 +11839,6 @@ export namespace proto {
             constructor(p?: proto.Message.IVpcRequestMessage);
             public payloadSchemaVersion?: (number|null);
             public requestId?: (string|null);
-            public launchRef?: (string|null);
-            public invitationExpiresAtMs?: (number|Long|null);
             public scopeHint?: (proto.Message.VpcRequestMessage.ScopeHint|null);
             public static create(properties?: proto.Message.IVpcRequestMessage): proto.Message.VpcRequestMessage;
             public static encode(m: proto.Message.IVpcRequestMessage, w?: $protobuf.Writer): $protobuf.Writer;
