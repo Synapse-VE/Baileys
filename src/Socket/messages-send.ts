@@ -1000,12 +1000,11 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 
 				let messageToSend = message
 				if (isGroupOrStatus) {
-					let groupSenderIdentity: string | undefined
-					if (meLid && (await signalRepository.hasSenderKey({ group: destinationJid, meId: meLid }))) {
-						groupSenderIdentity = meLid
-					} else if (await signalRepository.hasSenderKey({ group: destinationJid, meId })) {
-						groupSenderIdentity = meId
-					}
+					const [hasLidSenderKey, hasPnSenderKey] = await Promise.all([
+						meLid ? signalRepository.hasSenderKey({ group: destinationJid, meId: meLid }) : false,
+						signalRepository.hasSenderKey({ group: destinationJid, meId })
+					])
+					const groupSenderIdentity = hasLidSenderKey ? meLid : hasPnSenderKey ? meId : undefined
 
 					if (groupSenderIdentity) {
 						try {
