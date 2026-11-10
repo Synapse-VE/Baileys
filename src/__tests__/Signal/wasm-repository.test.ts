@@ -293,6 +293,12 @@ describe('WASM SignalRepository phase 1', () => {
 		const pnSession = await auth.keys.get('session', [bobAddress.toString()])
 		expect(lidSession[lidId]).toBeTruthy()
 		expect(pnSession[bobAddress.toString()]).toBeFalsy()
+
+		expect(await repository.migrateSession(bobJid, lidJid)).toEqual({
+			migrated: 0,
+			skipped: 1,
+			total: 1
+		})
 	})
 
 	it('migrates every listed device when the source is user-level', async () => {
