@@ -303,6 +303,8 @@ wasm32-unknown-unknown: instalado
 wasm-pack 0.15.1: via npx
 ```
 
+Setup reproducible: `scripts/setup-wasm-toolchain.sh` (instala rustup, target y wasm-pack en `.tools/`).
+
 Smoke de compilacion:
 
 ```text
