@@ -1,7 +1,7 @@
 {
-  "date": "2026-11-10T11:31:02.302Z",
-  "roundtrips": 500,
-  "totalMs": 364.88,
-  "roundtripsPerSecond": 1370,
-  "avgRoundtripMs": 0.73
+  "date": "2026-11-10T12:00:17.284Z",
+  "roundtrips": 2000,
+  "totalMs": 1324.75,
+  "roundtripsPerSecond": 1510,
+  "avgRoundtripMs": 0.662
 }
