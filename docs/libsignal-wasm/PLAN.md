@@ -266,13 +266,40 @@ Con WASM estable, seguir con:
 - Observabilidad y metricas de sesiones.
 - Rendimiento y reconexion.
 
+## Evidencia Fase 1 inicial
+
+El bridge se construyo desde el codigo del PR, no solo desde el paquete
+prebuilt:
+
+```text
+wasm-pack build --target web --no-pack --no-opt
+duracion: 4m 37s
+wasm: 1.1 MB
+exports: 46
+```
+
+PoC de snapshot 1:1:
+
+```text
+mensaje: hola desde wasm
+respuesta: respuesta wasm
+messageType: 3
+ciphertext: 146 bytes
+removedPreKeyId: 1
+session: 379 bytes
+```
+
+Esto valida cifrado, descifrado de prekey, respuesta y persistencia por
+changeset. Todavia no valida el socket real ni el QR.
+
 ## Estado
 
 ```text
-Fase actual: 0
-QR: no solicitado
-Merge: prohibido
-Produccion: intacta
+Fase actual: 1 (PoC cripto)
+Bridge:      construido desde fuente
+QR:          pendiente
+Merge:       prohibido
+Produccion:  intacta
 ```
 
 ## Baseline de Fase 0 (2026-11-09)
