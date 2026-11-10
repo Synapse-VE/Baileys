@@ -11,6 +11,22 @@ npm run build
 La suite WASM usa el bridge vendorizado en `vendor/whatsapp-rust-bridge` y
 verifica sus hashes antes de ejecutar.
 
+## Seleccionar backend
+
+El factory publico se importa desde el paquete:
+
+```ts
+import { makeWasmSignalRepositoryFactory } from '@synapse-ve/baileys'
+
+makeWASocket({
+  auth: state,
+  makeSignalRepository: makeWasmSignalRepositoryFactory(bridge)
+})
+```
+
+El backend legacy sigue siendo el default. WASM solo se usa cuando se pasa
+`makeSignalRepository`; no hay cambio de comportamiento para quien no lo pase.
+
 ## Auth de prueba
 
 El auth de prueba vive en `.tools/auth-wasm` y no se commitea. No usar el auth
