@@ -9,10 +9,31 @@ import { makeWasmSessionStore, type WasmBundle, type WasmSessionBridge } from '.
 
 type AddressFactory = (user: string, device: number) => { toString(): string }
 
-export type WasmRepositoryDeps = {
-	bridge: WasmSessionBridge & {
-		SessionRecord?: { deserialize(value: Uint8Array): { haveOpenSession(): boolean } }
+type WasmStorage = {
+	loadSenderKey(keyId: string): Promise<Uint8Array | null>
+	storeSenderKey(keyId: string, record: Uint8Array): Promise<void>
+}
+
+type WasmGroupApi = {
+	GroupCipher: new (
+		storage: WasmStorage,
+		group: string,
+		sender: { toString(): string }
+	) => { encrypt(data: Uint8Array): Promise<Uint8Array>; decrypt(data: Uint8Array): Promise<Uint8Array> }
+	GroupSessionBuilder: new (storage: WasmStorage) => {
+		create(name: unknown): Promise<{ serialize(): Uint8Array }>
+		process(name: unknown, skdm: unknown): Promise<void>
 	}
+	SenderKeyName: new (group: string, sender: { toString(): string }) => { toString(): string }
+	SenderKeyDistributionMessage: { deserialize(value: Uint8Array): unknown }
+	projectLegacySenderKeyRecordV1(record: Uint8Array): Uint8Array
+}
+
+export type WasmRepositoryDeps = {
+	bridge: WasmSessionBridge &
+		WasmGroupApi & {
+			SessionRecord?: { deserialize(value: Uint8Array): { haveOpenSession(): boolean } }
+		}
 	auth: SignalAuthState
 	address: AddressFactory
 	lidMapping: LIDMappingStore
@@ -60,13 +81,34 @@ export const makeWasmSignalRepository = ({
 	lidMapping
 }: WasmRepositoryDeps): SignalRepositoryWithLIDStore => {
 	const store = makeWasmSessionStore(bridge, auth)
+	const groupStorage: WasmStorage = {
+		async loadSenderKey(keyId) {
+			const { [keyId]: key } = await auth.keys.get('sender-key', [keyId])
+			return key ?? null
+		},
+		async storeSenderKey(keyId, record) {
+			await auth.keys.set({
+				'sender-key': { [keyId]: bridge.projectLegacySenderKeyRecordV1(record) }
+			})
+		}
+	}
+	const senderName = (group: string, meId: string) => new bridge.SenderKeyName(group, addressForJid(meId, address))
 
 	const repository: SignalRepositoryWithLIDStore = {
-		async decryptGroupMessage() {
-			throw new Error('WASM group decryption is not implemented in phase 1')
+		async decryptGroupMessage({ group, authorJid, msg }) {
+			const cipher = new bridge.GroupCipher(groupStorage, group, addressForJid(authorJid, address))
+			return cipher.decrypt(msg)
 		},
-		async processSenderKeyDistributionMessage() {
-			throw new Error('WASM sender keys are not implemented in phase 1')
+		async processSenderKeyDistributionMessage({ item, authorJid }) {
+			if (!item.groupId || !item.axolotlSenderKeyDistributionMessage) {
+				throw new Error('Sender key distribution message is incomplete')
+			}
+
+			const builder = new bridge.GroupSessionBuilder(groupStorage)
+			await builder.process(
+				senderName(item.groupId, authorJid),
+				bridge.SenderKeyDistributionMessage.deserialize(item.axolotlSenderKeyDistributionMessage)
+			)
 		},
 		async decryptMessage({ jid, type, ciphertext }) {
 			const addr = addressForJid(jid, address)
@@ -79,14 +121,22 @@ export const makeWasmSignalRepository = ({
 			const addr = addressForJid(jid, address)
 			return store.encrypt(addr, data, await resolveStorageId(jid, address, lidMapping))
 		},
-		async encryptGroupMessage() {
-			throw new Error('WASM group encryption is not implemented in phase 1')
+		async encryptGroupMessage({ group, meId, data }) {
+			const name = senderName(group, meId)
+			const builder = new bridge.GroupSessionBuilder(groupStorage)
+			const skdm = await builder.create(name)
+			const cipher = new bridge.GroupCipher(groupStorage, group, addressForJid(meId, address))
+			const ciphertext = await cipher.encrypt(data)
+			return { ciphertext, senderKeyDistributionMessage: skdm.serialize() }
 		},
-		async getSenderKeyDistributionMessage() {
-			throw new Error('WASM sender keys are not implemented in phase 1')
+		async getSenderKeyDistributionMessage({ group, meId }) {
+			const builder = new bridge.GroupSessionBuilder(groupStorage)
+			return (await builder.create(senderName(group, meId))).serialize()
 		},
-		async hasSenderKey() {
-			return false
+		async hasSenderKey({ group, meId }) {
+			const name = senderName(group, meId).toString()
+			const { [name]: key } = await auth.keys.get('sender-key', [name])
+			return !!key
 		},
 		async getSessionInfo(jid) {
 			const wireId = await resolveStorageId(jid, address, lidMapping)

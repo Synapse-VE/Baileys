@@ -301,7 +301,7 @@ Esa prueba corre en CI sin compilar Rust.
 ## Estado
 
 ```text
-Fase actual: 2 (rollback 1:1 validado; prekeys/multi-device pendientes)
+Fase actual: 3/4 (1:1 y grupo basico validados; multi-device y retries pendientes)
 Bridge:      construido desde fuente
 QR:          pendiente
 Merge:       prohibido

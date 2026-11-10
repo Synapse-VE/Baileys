@@ -151,6 +151,54 @@ describe('WASM SignalRepository phase 1', () => {
 		expect(aliceAddress.toString()).toBe('551100000001.0')
 	})
 
+	it('creates, distributes and decrypts a group sender key', async () => {
+		const alice = makeParty()
+		const bob = makeParty()
+		const aliceRepo = makeRepository(makeAuth(alice))
+		const bobRepo = makeRepository(makeAuth(bob))
+		const group = '120363000000000000@g.us'
+
+		const first = await aliceRepo.encryptGroupMessage({
+			group,
+			meId: aliceJid,
+			data: new TextEncoder().encode('grupo wasm')
+		})
+		expect(first.ciphertext.length).toBeGreaterThan(0)
+
+		await bobRepo.processSenderKeyDistributionMessage({
+			item: {
+				groupId: group,
+				axolotlSenderKeyDistributionMessage: first.senderKeyDistributionMessage
+			},
+			authorJid: aliceJid
+		})
+		const plaintext = await bobRepo.decryptGroupMessage({
+			group,
+			authorJid: aliceJid,
+			msg: first.ciphertext
+		})
+		expect(new TextDecoder().decode(plaintext)).toBe('grupo wasm')
+
+		const reply = await bobRepo.encryptGroupMessage({
+			group,
+			meId: bobJid,
+			data: new TextEncoder().encode('respuesta grupo')
+		})
+		await aliceRepo.processSenderKeyDistributionMessage({
+			item: {
+				groupId: group,
+				axolotlSenderKeyDistributionMessage: reply.senderKeyDistributionMessage
+			},
+			authorJid: bobJid
+		})
+		const replyIn = await aliceRepo.decryptGroupMessage({
+			group,
+			authorJid: bobJid,
+			msg: reply.ciphertext
+		})
+		expect(new TextDecoder().decode(replyIn)).toBe('respuesta grupo')
+	})
+
 	it('lets the legacy JS repository read a session advanced by WASM', async () => {
 		const alice = makeParty()
 		const bob = makeParty()
