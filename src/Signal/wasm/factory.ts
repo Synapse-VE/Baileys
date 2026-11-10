@@ -3,6 +3,8 @@ import type { ILogger } from '../../Utils/logger'
 import { LIDMappingStore } from '../lid-mapping'
 import { makeWasmSignalRepository, type WasmRepositoryDeps, type WasmSignalRepository } from './repository'
 
+export type { WasmRepositoryDiagnostics, WasmSignalRepository } from './repository'
+
 /** Bridge surface needed by the factory, including the address constructor. */
 export type WasmBackendBridge = WasmRepositoryDeps['bridge'] & {
 	ProtocolAddress: new (user: string, device: number) => { toString(): string }
