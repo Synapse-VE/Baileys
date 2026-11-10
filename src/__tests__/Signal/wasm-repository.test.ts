@@ -93,6 +93,7 @@ describe('WASM SignalRepository phase 1', () => {
 		const repository = factory(auth, P({ level: 'silent' }))
 		expect(repository.jidToSignalProtocolAddress('551100000001:2@s.whatsapp.net')).toBe('551100000001.2')
 		expect(() => repository.close?.()).not.toThrow()
+		expect(() => repository.close?.()).not.toThrow()
 	})
 
 	it('stores a session under the resolved LID storage id', async () => {
