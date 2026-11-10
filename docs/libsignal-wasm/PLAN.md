@@ -301,7 +301,7 @@ Esa prueba corre en CI sin compilar Rust.
 ## Estado
 
 ```text
-Fase actual: 3/4 (1:1 y grupo basico validados; multi-device y retries pendientes)
+Fase actual: 4 (grupo vivo basico validado; retries y sender-key memory pendientes)
 Bridge:      construido desde fuente
 QR:          pendiente
 Merge:       prohibido
