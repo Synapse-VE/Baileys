@@ -3,7 +3,7 @@ import type { SignalAuthState } from '../../Types'
 import type { SignalRepositoryWithLIDStore } from '../../Types/Signal'
 import { jidDecode, WAJIDDomains } from '../../WABinary'
 import type { LIDMappingStore } from '../lid-mapping'
-import { makeWasmSessionStore, type WasmSessionBridge } from './session-store'
+import { makeWasmSessionStore, type WasmBundle, type WasmSessionBridge } from './session-store'
 
 type AddressFactory = (user: string, device: number) => { toString(): string }
 
@@ -70,15 +70,25 @@ export const makeWasmSignalRepository = ({
 		async getSessionInfo() {
 			return null
 		},
-		async injectE2ESession() {
-			throw new Error('WASM session injection is not implemented in phase 1')
+		async injectE2ESession({ jid, session }) {
+			await store.processBundle(addressForJid(jid, address), session as WasmBundle)
 		},
 		jidToSignalProtocolAddress(jid) {
 			return addressForJid(jid, address).toString()
 		},
 		lidMapping,
-		async validateSession() {
-			return { exists: false, reason: 'WASM session validation pending' }
+		async validateSession(jid) {
+			const wireId = addressForJid(jid, address).toString()
+			const { [wireId]: serialized } = await auth.keys.get('session', [wireId])
+			if (!serialized) return { exists: false, reason: 'no session' }
+			if (!bridge.SessionRecord) return { exists: true }
+			try {
+				return bridge.SessionRecord.deserialize(serialized).haveOpenSession()
+					? { exists: true }
+					: { exists: false, reason: 'no open session' }
+			} catch {
+				return { exists: false, reason: 'validation error' }
+			}
 		},
 		async migrateSession() {
 			return { migrated: 0, skipped: 0, total: 0 }

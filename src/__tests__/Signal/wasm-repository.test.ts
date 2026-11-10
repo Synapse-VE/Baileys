@@ -109,6 +109,8 @@ describe('WASM SignalRepository phase 1', () => {
 		)
 		await aliceAuth.keys.set({ session: { [bobAddress.toString()]: pair.changes.session! } })
 
+		expect(await aliceRepo.validateSession(bobJid)).toEqual({ exists: true })
+
 		const sent = await aliceRepo.encryptMessage({
 			jid: bobJid,
 			data: new TextEncoder().encode('repo hola')

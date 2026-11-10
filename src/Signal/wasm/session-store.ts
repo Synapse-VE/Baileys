@@ -22,7 +22,19 @@ export type WasmChanges = {
 
 export type WasmAddress = { toString(): string }
 
+export type WasmBundle = {
+	registrationId: number
+	identityKey: Uint8Array
+	preKey?: { keyId: number; publicKey: Uint8Array }
+	signedPreKey: { keyId: number; publicKey: Uint8Array; signature: Uint8Array }
+}
+
 export type WasmSessionBridge = {
+	processBundleWithSnapshot(
+		snapshot: WasmSnapshot,
+		address: WasmAddress,
+		bundle: WasmBundle
+	): Promise<{ changes: WasmChanges }>
 	encryptWithSnapshot(
 		snapshot: WasmSnapshot,
 		address: WasmAddress,
@@ -106,6 +118,12 @@ export const makeWasmSessionStore = (bridge: WasmSessionBridge, auth: SignalAuth
 	}
 
 	return {
+		async processBundle(address: WasmAddress, bundle: WasmBundle) {
+			const wireId = address.toString()
+			const out = await bridge.processBundleWithSnapshot(await snapshot(address), address, bundle)
+			await apply(wireId, out.changes)
+		},
+
 		async encrypt(address: WasmAddress, data: Uint8Array) {
 			const wireId = address.toString()
 			const out = await bridge.encryptWithSnapshot(await snapshot(address), address, data)
