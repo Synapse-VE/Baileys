@@ -199,6 +199,71 @@ describe('WASM SignalRepository phase 1', () => {
 		expect(new TextDecoder().decode(replyIn)).toBe('respuesta grupo')
 	})
 
+	it('clears the old session when the peer identity changes', async () => {
+		const alice = makeParty()
+		const bob = makeParty()
+		const aliceAuth = makeAuth(alice)
+		const bobAuth = makeAuth(bob)
+		const aliceRepo = makeRepository(aliceAuth)
+		const bobRepo = makeRepository(bobAuth)
+		const bobAddress = new bridge.ProtocolAddress('551100000002', 0)
+
+		const pair = await bridge.processBundleWithSnapshot(
+			{ identity: alice.identity, registrationId: alice.registrationId, preKeys: [], signedPreKeys: [] },
+			bobAddress,
+			{
+				registrationId: bob.registrationId,
+				identityKey: prefixed(bob.identity.public),
+				preKey: { keyId: 1, publicKey: prefixed(bob.preKey.keyPair.pubKey) },
+				signedPreKey: {
+					keyId: 1,
+					publicKey: prefixed(bob.signedPreKey.keyPair.pubKey),
+					signature: bob.signedPreKey.signature
+				}
+			}
+		)
+		await aliceAuth.keys.set({ session: { [bobAddress.toString()]: pair.changes.session! } })
+		const first = await aliceRepo.encryptMessage({ jid: bobJid, data: new TextEncoder().encode('old identity') })
+		await bobRepo.decryptMessage({ jid: aliceJid, type: 'pkmsg', ciphertext: first.ciphertext })
+
+		const replacement = makeParty()
+		const replacementAuth = makeAuth(replacement)
+		const replacementRepo = makeRepository(replacementAuth)
+		const replacementPair = await bridge.processBundleWithSnapshot(
+			{ identity: replacement.identity, registrationId: replacement.registrationId, preKeys: [], signedPreKeys: [] },
+			bobAddress,
+			{
+				registrationId: bob.registrationId,
+				identityKey: prefixed(bob.identity.public),
+				preKey: { keyId: 1, publicKey: prefixed(bob.preKey.keyPair.pubKey) },
+				signedPreKey: {
+					keyId: 1,
+					publicKey: prefixed(bob.signedPreKey.keyPair.pubKey),
+					signature: bob.signedPreKey.signature
+				}
+			}
+		)
+		await replacementAuth.keys.set({ session: { [bobAddress.toString()]: replacementPair.changes.session! } })
+		await bobAuth.keys.set({
+			'pre-key': {
+				'1': { public: bob.preKey.keyPair.pubKey, private: bob.preKey.keyPair.privKey }
+			}
+		})
+
+		const second = await replacementRepo.encryptMessage({
+			jid: bobJid,
+			data: new TextEncoder().encode('new identity')
+		})
+		const plaintext = await bobRepo.decryptMessage({
+			jid: aliceJid,
+			type: 'pkmsg',
+			ciphertext: second.ciphertext
+		})
+		expect(new TextDecoder().decode(plaintext)).toBe('new identity')
+		const info = await bobRepo.getSessionInfo(aliceJid)
+		expect(info?.registrationId).toBe(replacement.registrationId)
+	})
+
 	it('lets the legacy JS repository decrypt a group sender key written by WASM', async () => {
 		const alice = makeParty()
 		const bob = makeParty()
