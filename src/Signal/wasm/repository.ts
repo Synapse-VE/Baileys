@@ -4,7 +4,12 @@ import type { SignalAuthState, SignalKeyStoreWithRecordTransaction } from '../..
 import type { SignalRepositoryWithLIDStore } from '../../Types/Signal'
 import { MISSING_KEYS_ERROR_TEXT } from '../../Utils/decode-wa-message'
 import { jidDecode, jidEncode, transferDevice, WAJIDDomains } from '../../WABinary'
-import { entryRegistrationId, isLegacySessionRecord, pickOpenLegacySession } from '../legacy-session'
+import {
+	entryRegistrationId,
+	hasOpenLegacySession,
+	isLegacySessionRecord,
+	pickOpenLegacySession
+} from '../legacy-session'
 import { fromTypedRecord } from '../legacy-session-codec'
 import type { LIDMappingStore } from '../lid-mapping'
 import { makeWasmSessionStore, type WasmBundle, type WasmSessionBridge } from './session-store'
@@ -233,6 +238,10 @@ export const makeWasmSignalRepository = ({
 			const wireId = await resolveStorageId(jid, address, lidMapping)
 			const { [wireId]: serialized } = await auth.keys.get('session', [wireId])
 			if (!serialized) return { exists: false, reason: 'no session' }
+			if (isLegacySessionRecord(serialized)) {
+				return hasOpenLegacySession(serialized) ? { exists: true } : { exists: false, reason: 'no open session' }
+			}
+
 			if (!bridge.SessionRecord) return { exists: true }
 			try {
 				return bridge.SessionRecord.deserialize(serialized).haveOpenSession()

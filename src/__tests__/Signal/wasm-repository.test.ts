@@ -208,6 +208,7 @@ describe('WASM SignalRepository phase 1', () => {
 			ciphertext: reply.ciphertext
 		})
 		expect(new TextDecoder().decode(replyIn)).toBe('repo respuesta')
+		expect(await aliceRepo.validateSession(bobJid)).toEqual({ exists: true })
 		expect(aliceAddress.toString()).toBe('551100000001.0')
 
 		await aliceRepo.deleteSession([bobJid])
