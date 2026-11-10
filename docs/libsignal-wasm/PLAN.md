@@ -291,7 +291,8 @@ session: 379 bytes
 
 Esto valida cifrado, descifrado de prekey, respuesta y persistencia por
 changeset. Tambien existe un store 1:1 minimo sobre el bridge, con prueba de
-reinicio. Todavia no valida el socket real ni el QR.
+reinicio, y una fachada `SignalRepository` minima para 1:1 por JID. Todavia no
+valida el socket real ni el QR.
 
 El bridge construido quedo vendorizado en `vendor/whatsapp-rust-bridge` con su
 procedencia y una prueba real en `src/__tests__/Signal/wasm-snapshot.test.ts`.
