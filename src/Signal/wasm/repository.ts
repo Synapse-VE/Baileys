@@ -154,14 +154,20 @@ export const makeWasmSignalRepository = ({
 		async processSenderKeyDistributionMessage({ item, authorJid }) {
 			const serializedSkdm = item.axolotlSenderKeyDistributionMessage
 			if (!item.groupId || !serializedSkdm) {
+				diagnostics.errors++
 				throw new Error('Sender key distribution message is incomplete')
 			}
 
 			const keyName = senderName(item.groupId, authorJid)
-			await withSenderKey(keyName.toString(), async () => {
-				const builder = new bridge.GroupSessionBuilder(groupStorage)
-				await builder.process(keyName, bridge.SenderKeyDistributionMessage.deserialize(serializedSkdm))
-			})
+			try {
+				await withSenderKey(keyName.toString(), async () => {
+					const builder = new bridge.GroupSessionBuilder(groupStorage)
+					await builder.process(keyName, bridge.SenderKeyDistributionMessage.deserialize(serializedSkdm))
+				})
+			} catch (error) {
+				diagnostics.errors++
+				throw error
+			}
 		},
 		async decryptMessage({ jid, type, ciphertext }) {
 			const addr = addressForJid(jid, address)
@@ -183,13 +189,18 @@ export const makeWasmSignalRepository = ({
 		async encryptGroupMessage({ group, meId, data }) {
 			const name = senderName(group, meId)
 			diagnostics.groupEncrypt++
-			return withSenderKey(name.toString(), async () => {
-				const builder = new bridge.GroupSessionBuilder(groupStorage)
-				const skdm = await builder.create(name)
-				const cipher = new bridge.GroupCipher(groupStorage, group, addressForJid(meId, address))
-				const ciphertext = await cipher.encrypt(data)
-				return { ciphertext, senderKeyDistributionMessage: skdm.serialize() }
-			})
+			try {
+				return await withSenderKey(name.toString(), async () => {
+					const builder = new bridge.GroupSessionBuilder(groupStorage)
+					const skdm = await builder.create(name)
+					const cipher = new bridge.GroupCipher(groupStorage, group, addressForJid(meId, address))
+					const ciphertext = await cipher.encrypt(data)
+					return { ciphertext, senderKeyDistributionMessage: skdm.serialize() }
+				})
+			} catch (error) {
+				diagnostics.errors++
+				throw error
+			}
 		},
 		async getSenderKeyDistributionMessage({ group, meId }) {
 			const name = senderName(group, meId)

@@ -513,6 +513,20 @@ describe('WASM SignalRepository phase 1', () => {
 		expect(new TextDecoder().decode(plaintext)).toBe('recuperar grupo')
 	})
 
+	it('counts an invalid sender-key distribution as a diagnostics error', async () => {
+		const repository = makeRepository(makeAuth(makeParty()))
+		await expect(
+			repository.processSenderKeyDistributionMessage({
+				item: {
+					groupId: '120363000000000003@g.us',
+					axolotlSenderKeyDistributionMessage: Buffer.from('invalid-skdm')
+				},
+				authorJid: '551100000001@s.whatsapp.net'
+			})
+		).rejects.toBeDefined()
+		expect(repository.getDiagnostics().errors).toBe(1)
+	})
+
 	it('clears the old session when the peer identity changes', async () => {
 		const alice = makeParty()
 		const bob = makeParty()
