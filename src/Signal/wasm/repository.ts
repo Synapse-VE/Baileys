@@ -273,9 +273,19 @@ export const makeWasmSignalRepository = ({
 		},
 		async deleteSession(jids) {
 			if (!jids.length) return
+			const ids = new Set<string>()
+			for (const jid of jids) ids.add(await resolveStorageId(jid, address, lidMapping))
 			const session: Record<string, null> = {}
-			for (const jid of jids) session[await resolveStorageId(jid, address, lidMapping)] = null
-			await auth.keys.set({ session })
+			for (const id of ids) session[id] = null
+
+			const keys = auth.keys as Partial<SignalKeyStoreWithRecordTransaction>
+			const run = async () => {
+				await auth.keys.set({ session })
+			}
+
+			await (keys.transactWith
+				? keys.transactWith({ records: [...ids].map(id => ({ type: 'session' as const, id })) }, run)
+				: run())
 		}
 	}
 
