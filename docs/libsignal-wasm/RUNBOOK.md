@@ -27,6 +27,14 @@ makeWASocket({
 El backend legacy sigue siendo el default. WASM solo se usa cuando se pasa
 `makeSignalRepository`; no hay cambio de comportamiento para quien no lo pase.
 
+## Benchmark
+
+```bash
+npm run bench:wasm
+```
+
+Mide 5,000 roundtrips 1:1 y escribe el resultado JSON por stdout.
+
 ## Auth de prueba
 
 El auth de prueba vive en `.tools/auth-wasm` y no se commitea. No usar el auth
