@@ -1,5 +1,5 @@
 import { proto } from '../../../WAProto/index.js'
-import type { SignalAuthState } from '../../Types'
+import type { SignalAuthState, SignalKeyStoreWithRecordTransaction } from '../../Types'
 import type { SignalRepositoryWithLIDStore } from '../../Types/Signal'
 import { jidDecode, WAJIDDomains } from '../../WABinary'
 import { entryRegistrationId, isLegacySessionRecord, pickOpenLegacySession } from '../legacy-session'
@@ -81,6 +81,11 @@ export const makeWasmSignalRepository = ({
 	lidMapping
 }: WasmRepositoryDeps): SignalRepositoryWithLIDStore => {
 	const store = makeWasmSessionStore(bridge, auth)
+	const withSenderKey = async <T>(keyId: string, work: () => Promise<T>): Promise<T> => {
+		const keys = auth.keys as Partial<SignalKeyStoreWithRecordTransaction>
+		return keys.transactWith ? keys.transactWith({ records: [{ type: 'sender-key', id: keyId }] }, work) : work()
+	}
+
 	const groupStorage: WasmStorage = {
 		async loadSenderKey(keyId) {
 			const { [keyId]: key } = await auth.keys.get('sender-key', [keyId])
@@ -96,19 +101,23 @@ export const makeWasmSignalRepository = ({
 
 	const repository: SignalRepositoryWithLIDStore = {
 		async decryptGroupMessage({ group, authorJid, msg }) {
-			const cipher = new bridge.GroupCipher(groupStorage, group, addressForJid(authorJid, address))
-			return cipher.decrypt(msg)
+			const keyId = senderName(group, authorJid).toString()
+			return withSenderKey(keyId, async () => {
+				const cipher = new bridge.GroupCipher(groupStorage, group, addressForJid(authorJid, address))
+				return cipher.decrypt(msg)
+			})
 		},
 		async processSenderKeyDistributionMessage({ item, authorJid }) {
-			if (!item.groupId || !item.axolotlSenderKeyDistributionMessage) {
+			const serializedSkdm = item.axolotlSenderKeyDistributionMessage
+			if (!item.groupId || !serializedSkdm) {
 				throw new Error('Sender key distribution message is incomplete')
 			}
 
-			const builder = new bridge.GroupSessionBuilder(groupStorage)
-			await builder.process(
-				senderName(item.groupId, authorJid),
-				bridge.SenderKeyDistributionMessage.deserialize(item.axolotlSenderKeyDistributionMessage)
-			)
+			const keyName = senderName(item.groupId, authorJid)
+			await withSenderKey(keyName.toString(), async () => {
+				const builder = new bridge.GroupSessionBuilder(groupStorage)
+				await builder.process(keyName, bridge.SenderKeyDistributionMessage.deserialize(serializedSkdm))
+			})
 		},
 		async decryptMessage({ jid, type, ciphertext }) {
 			const addr = addressForJid(jid, address)
@@ -123,15 +132,20 @@ export const makeWasmSignalRepository = ({
 		},
 		async encryptGroupMessage({ group, meId, data }) {
 			const name = senderName(group, meId)
-			const builder = new bridge.GroupSessionBuilder(groupStorage)
-			const skdm = await builder.create(name)
-			const cipher = new bridge.GroupCipher(groupStorage, group, addressForJid(meId, address))
-			const ciphertext = await cipher.encrypt(data)
-			return { ciphertext, senderKeyDistributionMessage: skdm.serialize() }
+			return withSenderKey(name.toString(), async () => {
+				const builder = new bridge.GroupSessionBuilder(groupStorage)
+				const skdm = await builder.create(name)
+				const cipher = new bridge.GroupCipher(groupStorage, group, addressForJid(meId, address))
+				const ciphertext = await cipher.encrypt(data)
+				return { ciphertext, senderKeyDistributionMessage: skdm.serialize() }
+			})
 		},
 		async getSenderKeyDistributionMessage({ group, meId }) {
-			const builder = new bridge.GroupSessionBuilder(groupStorage)
-			return (await builder.create(senderName(group, meId))).serialize()
+			const name = senderName(group, meId)
+			return withSenderKey(name.toString(), async () => {
+				const builder = new bridge.GroupSessionBuilder(groupStorage)
+				return (await builder.create(name)).serialize()
+			})
 		},
 		async hasSenderKey({ group, meId }) {
 			const name = senderName(group, meId).toString()
