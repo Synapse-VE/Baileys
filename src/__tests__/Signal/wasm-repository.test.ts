@@ -199,6 +199,46 @@ describe('WASM SignalRepository phase 1', () => {
 		expect(new TextDecoder().decode(replyIn)).toBe('respuesta grupo')
 	})
 
+	it('lets the legacy JS repository decrypt a group sender key written by WASM', async () => {
+		const alice = makeParty()
+		const bob = makeParty()
+		const aliceAuth = makeAuth(alice)
+		const bobAuth = makeAuth(bob)
+		const aliceRepo = makeRepository(aliceAuth)
+		const bobRepo = makeRepository(bobAuth)
+		const group = '120363000000000000@g.us'
+
+		const first = await aliceRepo.encryptGroupMessage({
+			group,
+			meId: aliceJid,
+			data: new TextEncoder().encode('grupo legacy')
+		})
+		await bobRepo.processSenderKeyDistributionMessage({
+			item: { groupId: group, axolotlSenderKeyDistributionMessage: first.senderKeyDistributionMessage },
+			authorJid: aliceJid
+		})
+		const firstPlain = await bobRepo.decryptGroupMessage({
+			group,
+			authorJid: aliceJid,
+			msg: first.ciphertext
+		})
+		expect(new TextDecoder().decode(firstPlain)).toBe('grupo legacy')
+
+		const second = await aliceRepo.encryptGroupMessage({
+			group,
+			meId: aliceJid,
+			data: new TextEncoder().encode('legacy group reads this')
+		})
+		const legacyBob = makeLibSignalRepository(bobAuth, P({ level: 'silent' }))
+		const plaintext = await legacyBob.decryptGroupMessage({
+			group,
+			authorJid: aliceJid,
+			msg: Buffer.from(second.ciphertext)
+		})
+		expect(new TextDecoder().decode(plaintext)).toBe('legacy group reads this')
+		legacyBob.close?.()
+	})
+
 	it('lets the legacy JS repository read a session advanced by WASM', async () => {
 		const alice = makeParty()
 		const bob = makeParty()
