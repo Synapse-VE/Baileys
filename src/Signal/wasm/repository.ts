@@ -2,6 +2,8 @@ import { proto } from '../../../WAProto/index.js'
 import type { SignalAuthState } from '../../Types'
 import type { SignalRepositoryWithLIDStore } from '../../Types/Signal'
 import { jidDecode, WAJIDDomains } from '../../WABinary'
+import { entryRegistrationId, isLegacySessionRecord, pickOpenLegacySession } from '../legacy-session'
+import { fromTypedRecord } from '../legacy-session-codec'
 import type { LIDMappingStore } from '../lid-mapping'
 import { makeWasmSessionStore, type WasmBundle, type WasmSessionBridge } from './session-store'
 
@@ -86,8 +88,25 @@ export const makeWasmSignalRepository = ({
 		async hasSenderKey() {
 			return false
 		},
-		async getSessionInfo() {
-			return null
+		async getSessionInfo(jid) {
+			const wireId = await resolveStorageId(jid, address, lidMapping)
+			const { [wireId]: stored } = await auth.keys.get('session', [wireId])
+			if (!stored) return null
+
+			const legacy = isLegacySessionRecord(stored)
+				? stored
+				: (() => {
+						const projection = bridge.projectLegacySessionRecordV1(stored)
+						return projection.status === 'projected' ? fromTypedRecord(projection.record) : undefined
+					})()
+			if (!legacy) return null
+
+			const open = pickOpenLegacySession(legacy)
+			const registrationId = entryRegistrationId(open, legacy)
+			const baseKey = open?.indexInfo?.baseKey
+			if (typeof registrationId !== 'number' || typeof baseKey !== 'string') return null
+
+			return { baseKey: new Uint8Array(Buffer.from(baseKey, 'base64')), registrationId }
 		},
 		async injectE2ESession({ jid, session }) {
 			await store.processBundle(

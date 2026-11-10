@@ -129,6 +129,10 @@ describe('WASM SignalRepository phase 1', () => {
 		})
 		expect(new TextDecoder().decode(plaintext)).toBe('repo hola')
 
+		const sessionInfo = await bobRepo.getSessionInfo(aliceJid)
+		expect(sessionInfo?.registrationId).toBe(alice.registrationId)
+		expect(sessionInfo?.baseKey.length).toBeGreaterThan(0)
+
 		const restartedBob = makeRepository(bobAuth)
 		const reply = await restartedBob.encryptMessage({
 			jid: aliceJid,
