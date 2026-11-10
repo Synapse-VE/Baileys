@@ -221,6 +221,11 @@ describe('WASM SignalRepository phase 1', () => {
 			meId: aliceJid
 		})
 		expect(standaloneSkdm.length).toBeGreaterThan(0)
+		const repeatedSkdm = await aliceRepo.getSenderKeyDistributionMessage({
+			group,
+			meId: aliceJid
+		})
+		expect(Buffer.from(repeatedSkdm)).toEqual(Buffer.from(standaloneSkdm))
 
 		const first = await aliceRepo.encryptGroupMessage({
 			group,
