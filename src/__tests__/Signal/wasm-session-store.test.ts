@@ -115,5 +115,11 @@ describe('WASM session store', () => {
 		const restartedBob = makeWasmSessionStore(bridge as never, bobAuth)
 		const reply = await restartedBob.encrypt(aliceAddress, new TextEncoder().encode('respuesta store'))
 		expect(reply.type).toBe('msg')
+
+		const concurrent = await Promise.all([
+			aliceStore.encrypt(bobAddress, new TextEncoder().encode('concurrente a')),
+			aliceStore.encrypt(bobAddress, new TextEncoder().encode('concurrente b'))
+		])
+		expect(new Set(concurrent.map(result => Buffer.from(result.ciphertext).toString('base64'))).size).toBe(2)
 	})
 })
