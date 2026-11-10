@@ -92,6 +92,7 @@ describe('WASM SignalRepository phase 1', () => {
 		const factory = makeWasmSignalRepositoryFactory(bridge as never)
 		const repository = factory(auth, P({ level: 'silent' }))
 		expect(repository.jidToSignalProtocolAddress('551100000001:2@s.whatsapp.net')).toBe('551100000001.2')
+		expect(() => repository.close?.()).not.toThrow()
 	})
 
 	it('stores a session under the resolved LID storage id', async () => {
@@ -212,6 +213,7 @@ describe('WASM SignalRepository phase 1', () => {
 		const aliceRepo = makeRepository(aliceAuth)
 		const bobRepo = makeRepository(bobAuth)
 		const group = '120363000000000000@g.us'
+		expect(await bobRepo.hasSenderKey({ group, meId: aliceJid })).toBe(false)
 
 		const standaloneSkdm = await aliceRepo.getSenderKeyDistributionMessage({
 			group,
