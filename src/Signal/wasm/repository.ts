@@ -196,8 +196,35 @@ export const makeWasmSignalRepository = ({
 				return { exists: false, reason: 'validation error' }
 			}
 		},
-		async migrateSession() {
-			return { migrated: 0, skipped: 0, total: 0 }
+		async migrateSession(fromJid, toJid) {
+			const fromId = addressForJid(fromJid, address).toString()
+			const toId = addressForJid(toJid, address).toString()
+			if (fromId === toId) return { migrated: 0, skipped: 1, total: 1 }
+
+			const keys = auth.keys as Partial<SignalKeyStoreWithRecordTransaction>
+			const run = async () => {
+				const [fromSession, toSession] = await Promise.all([
+					auth.keys.get('session', [fromId]),
+					auth.keys.get('session', [toId])
+				])
+				const source = fromSession[fromId]
+				if (!source || toSession[toId]) return { migrated: 0, skipped: 1, total: 1 }
+
+				await auth.keys.set({ session: { [toId]: source, [fromId]: null } })
+				return { migrated: 1, skipped: 0, total: 1 }
+			}
+
+			return keys.transactWith
+				? keys.transactWith(
+						{
+							records: [
+								{ type: 'session', id: fromId },
+								{ type: 'session', id: toId }
+							]
+						},
+						run
+					)
+				: run()
 		},
 		async deleteSession(jids) {
 			if (!jids.length) return

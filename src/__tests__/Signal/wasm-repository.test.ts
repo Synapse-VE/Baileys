@@ -264,6 +264,37 @@ describe('WASM SignalRepository phase 1', () => {
 		expect(new TextDecoder().decode(replyIn)).toBe('respuesta grupo')
 	})
 
+	it('migrates an exact session id without duplicating the row', async () => {
+		const alice = makeParty()
+		const bob = makeParty()
+		const auth = makeAuth(alice)
+		const repository = makeRepository(auth)
+		const bobAddress = new bridge.ProtocolAddress('551100000002', 0)
+		const lidJid = '999999999999999@lid'
+		const pair = await bridge.processBundleWithSnapshot(
+			{ identity: alice.identity, registrationId: alice.registrationId, preKeys: [], signedPreKeys: [] },
+			bobAddress,
+			{
+				registrationId: bob.registrationId,
+				identityKey: prefixed(bob.identity.public),
+				preKey: { keyId: 1, publicKey: prefixed(bob.preKey.keyPair.pubKey) },
+				signedPreKey: {
+					keyId: 1,
+					publicKey: prefixed(bob.signedPreKey.keyPair.pubKey),
+					signature: bob.signedPreKey.signature
+				}
+			}
+		)
+		await auth.keys.set({ session: { [bobAddress.toString()]: pair.changes.session! } })
+
+		expect(await repository.migrateSession(bobJid, lidJid)).toEqual({ migrated: 1, skipped: 0, total: 1 })
+		const lidId = repository.jidToSignalProtocolAddress(lidJid)
+		const lidSession = await auth.keys.get('session', [lidId])
+		const pnSession = await auth.keys.get('session', [bobAddress.toString()])
+		expect(lidSession[lidId]).toBeTruthy()
+		expect(pnSession[bobAddress.toString()]).toBeFalsy()
+	})
+
 	it('keeps independent sessions for two devices of the same user', async () => {
 		const alice = makeParty()
 		const bob = makeParty()
