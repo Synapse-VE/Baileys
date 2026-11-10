@@ -1,4 +1,13 @@
+import type {
+	LegacySessionProjectionV1,
+	LegacySessionRecordV1
+} from '../../../vendor/whatsapp-rust-bridge/pkg/whatsapp_rust_bridge.js'
 import type { SignalAuthState, SignalDataSet, SignalDataTypeMap } from '../../Types'
+import { generateSignalPubKey } from '../../Utils/crypto'
+import { hasOpenLegacySession, isLegacySessionRecord } from '../legacy-session'
+import { fromTypedRecord, toTypedRecord } from '../legacy-session-codec'
+
+const DEFAULT_LEGACY_MESSAGE_KEYS = 2000
 
 export type WasmSnapshot = {
 	identity: { public: Uint8Array; private: Uint8Array }
@@ -50,13 +59,40 @@ export type WasmSessionBridge = {
 		address: WasmAddress,
 		ciphertext: Uint8Array
 	): Promise<{ plaintext: Uint8Array; changes: WasmChanges }>
+	importLegacySessionRecordV1(record: LegacySessionRecordV1, context: SignalContext): Uint8Array
+	projectLegacySessionRecordV1(bytes: Uint8Array): LegacySessionProjectionV1
 }
+
+type SignalContext = { identityKey: Uint8Array; registrationId: number }
 
 /** Minimal 1:1 session store over the bridge snapshot API. */
 export const makeWasmSessionStore = (bridge: WasmSessionBridge, auth: SignalAuthState) => {
 	const read = async <T extends keyof SignalDataTypeMap>(type: T, id: string) => {
 		const result = await auth.keys.get(type, [id])
 		return result[id] as SignalDataTypeMap[T] | undefined
+	}
+
+	const readSession = async (wireId: string) => {
+		const stored = await read('session', wireId)
+		if (!stored) return undefined
+		if (isLegacySessionRecord(stored)) {
+			if (!hasOpenLegacySession(stored)) return undefined
+			return bridge.importLegacySessionRecordV1(toTypedRecord(stored), {
+				identityKey: generateSignalPubKey(auth.creds.signedIdentityKey.public),
+				registrationId: auth.creds.registrationId
+			})
+		}
+
+		return stored
+	}
+
+	const toStoredSession = (session: Uint8Array) => {
+		const projection = bridge.projectLegacySessionRecordV1(session)
+		if (projection.status !== 'projected') return session
+		const overflowing = projection.record.sessions.some(indexed =>
+			indexed.session.chains.some(chain => chain.messageKeys.length > DEFAULT_LEGACY_MESSAGE_KEYS)
+		)
+		return overflowing ? session : fromTypedRecord(projection.record)
 	}
 
 	const snapshot = async (
@@ -66,14 +102,10 @@ export const makeWasmSessionStore = (bridge: WasmSessionBridge, auth: SignalAuth
 	): Promise<WasmSnapshot> => {
 		const wireId = storageId
 		const [session, peerIdentity, ...preKeys] = await Promise.all([
-			read('session', wireId),
+			readSession(wireId),
 			read('identity-key', wireId),
 			...preKeyIds.map(async id => ({ id, value: await read('pre-key', String(id)) }))
 		])
-
-		if (session && !(session instanceof Uint8Array)) {
-			throw new Error(`unsupported legacy session record for ${wireId}`)
-		}
 
 		return {
 			identity: {
@@ -81,7 +113,7 @@ export const makeWasmSessionStore = (bridge: WasmSessionBridge, auth: SignalAuth
 				private: auth.creds.signedIdentityKey.private
 			},
 			registrationId: auth.creds.registrationId,
-			session: session as Uint8Array | undefined,
+			session,
 			peerIdentity: peerIdentity as Uint8Array | undefined,
 			preKeys: preKeys.flatMap(({ id, value }) =>
 				value ? [{ id, keyPair: { public: value.public, private: value.private } }] : []
@@ -105,7 +137,7 @@ export const makeWasmSessionStore = (bridge: WasmSessionBridge, auth: SignalAuth
 		if (changes.sessionCleared) {
 			update.session = { [wireId]: null }
 		} else if (changes.session) {
-			update.session = { [wireId]: changes.session }
+			update.session = { [wireId]: toStoredSession(changes.session) as Uint8Array }
 		}
 
 		if (changes.identity) {
