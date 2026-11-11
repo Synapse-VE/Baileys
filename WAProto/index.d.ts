@@ -3862,6 +3862,7 @@ export namespace proto {
         sourceExperienceId?: (number|null);
         sourceExperienceIds?: (number[]|null);
         foaMutualsSignature?: (Uint8Array|null);
+        forwardReachScore?: (number|null);
     }
 
     class ContextInfo implements IContextInfo {
@@ -3935,6 +3936,7 @@ export namespace proto {
         public sourceExperienceId?: (number|null);
         public sourceExperienceIds: number[];
         public foaMutualsSignature?: (Uint8Array|null);
+        public forwardReachScore?: (number|null);
         public static create(properties?: proto.IContextInfo): proto.ContextInfo;
         public static encode(m: proto.IContextInfo, w?: $protobuf.Writer): $protobuf.Writer;
         public static decode(r: ($protobuf.Reader|Uint8Array), l?: number): proto.ContextInfo;
@@ -6643,6 +6645,8 @@ export namespace proto {
         botGroupParticipantMessage?: (proto.Message.IFutureProofMessage|null);
         requestLocationUpdateMessage?: (proto.Message.IRequestLocationUpdateMessage|null);
         vpcRequestMessage?: (proto.Message.IVpcRequestMessage|null);
+        instantVideoMessage?: (proto.Message.IVideoMessage|null);
+        paymentDetailsMessage?: (proto.Message.IPaymentDetailsMessage|null);
         pollResultSnapshotMessageV3Legacy?: (proto.Message.IPollResultSnapshotMessage|null);
     }
 
@@ -6766,6 +6770,8 @@ export namespace proto {
         public botGroupParticipantMessage?: (proto.Message.IFutureProofMessage|null);
         public requestLocationUpdateMessage?: (proto.Message.IRequestLocationUpdateMessage|null);
         public vpcRequestMessage?: (proto.Message.IVpcRequestMessage|null);
+        public instantVideoMessage?: (proto.Message.IVideoMessage|null);
+        public paymentDetailsMessage?: (proto.Message.IPaymentDetailsMessage|null);
         public pollResultSnapshotMessageV3Legacy?: (proto.Message.IPollResultSnapshotMessage|null);
         public static create(properties?: proto.IMessage): proto.Message;
         public static encode(m: proto.IMessage, w?: $protobuf.Writer): $protobuf.Writer;
@@ -9454,6 +9460,49 @@ export namespace proto {
 
             enum OrderSurface {
                 CATALOG = 1
+            }
+        }
+
+        interface IPaymentDetailsMessage {
+            serviceType?: (proto.Message.PaymentDetailsMessage.ServiceType|null);
+            amount?: (proto.IMoney|null);
+            payeeName?: (string|null);
+            payerName?: (string|null);
+            transactionTimestampMs?: (number|Long|null);
+            transactionId?: (string|null);
+            status?: (proto.Message.PaymentDetailsMessage.Status|null);
+            contextInfo?: (proto.IContextInfo|null);
+        }
+
+        class PaymentDetailsMessage implements IPaymentDetailsMessage {
+            constructor(p?: proto.Message.IPaymentDetailsMessage);
+            public serviceType?: (proto.Message.PaymentDetailsMessage.ServiceType|null);
+            public amount?: (proto.IMoney|null);
+            public payeeName?: (string|null);
+            public payerName?: (string|null);
+            public transactionTimestampMs?: (number|Long|null);
+            public transactionId?: (string|null);
+            public status?: (proto.Message.PaymentDetailsMessage.Status|null);
+            public contextInfo?: (proto.IContextInfo|null);
+            public static create(properties?: proto.Message.IPaymentDetailsMessage): proto.Message.PaymentDetailsMessage;
+            public static encode(m: proto.Message.IPaymentDetailsMessage, w?: $protobuf.Writer): $protobuf.Writer;
+            public static decode(r: ($protobuf.Reader|Uint8Array), l?: number): proto.Message.PaymentDetailsMessage;
+            public static fromObject(d: { [k: string]: any }): proto.Message.PaymentDetailsMessage;
+            public static toObject(m: proto.Message.PaymentDetailsMessage, o?: $protobuf.IConversionOptions): { [k: string]: any };
+            public toJSON(): { [k: string]: any };
+            public static getTypeUrl(typeUrlPrefix?: string): string;
+        }
+
+        namespace PaymentDetailsMessage {
+
+            enum ServiceType {
+                UNKNOWN = 0,
+                UPI = 1
+            }
+
+            enum Status {
+                STATUS_UNKNOWN = 0,
+                SUCCESS = 1
             }
         }
 
