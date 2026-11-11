@@ -25,6 +25,9 @@ const minutes = Number(values.minutes)
 if (!Number.isFinite(minutes) || minutes <= 0) throw new Error('--minutes must be a positive number')
 
 const logger = P({ level: 'silent' })
+const startedAt = Date.now()
+const durationMs = minutes * 60_000
+const elapsedMinutes = () => +((Date.now() - startedAt) / 60_000).toFixed(1)
 const { state, saveCreds } = await useMultiFileAuthState(authDir)
 const { version } = await fetchLatestBaileysVersion()
 const factory = makeWasmSignalRepositoryFactory(bridge)
@@ -90,29 +93,52 @@ const connect = async () => {
 	})
 }
 
-await connect()
-setInterval(
-	() =>
-		console.log(
-			JSON.stringify({
-				at: new Date().toISOString(),
-				heartbeat: true,
-				connects,
-				closes,
-				messages
-			})
-		),
-	60_000
-)
-setTimeout(() => {
+const finish = reason => {
+	if (stopped) return
 	stopped = true
-	console.log(JSON.stringify({ at: new Date().toISOString(), done: true, connects, closes, messages }))
+	console.log(
+		JSON.stringify({
+			at: new Date().toISOString(),
+			done: true,
+			reason,
+			elapsedMinutes: elapsedMinutes(),
+			connects,
+			closes,
+			messages
+		})
+	)
 	process.exit(0)
-}, minutes * 60_000)
+}
+
+await connect()
+setInterval(() => {
+	const elapsed = elapsedMinutes()
+	console.log(
+		JSON.stringify({
+			at: new Date().toISOString(),
+			heartbeat: true,
+			elapsedMinutes: elapsed,
+			connects,
+			closes,
+			messages
+		})
+	)
+	if (Date.now() - startedAt >= durationMs) finish('deadline')
+}, 60_000)
+setTimeout(() => finish('timer'), durationMs)
 
 const stop = async signal => {
 	stopped = true
-	console.log(JSON.stringify({ at: new Date().toISOString(), stopping: signal, connects, closes, messages }))
+	console.log(
+		JSON.stringify({
+			at: new Date().toISOString(),
+			stopping: signal,
+			elapsedMinutes: elapsedMinutes(),
+			connects,
+			closes,
+			messages
+		})
+	)
 	try {
 		await sock?.end?.(new Error(`soak stopped by ${signal}`))
 	} finally {
