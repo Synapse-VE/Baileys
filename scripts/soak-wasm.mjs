@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs'
+import http from 'node:http'
 import { resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 import makeWASocket, {
@@ -36,6 +37,24 @@ let closes = 0
 let messages = 0
 let stopped = false
 let sock
+
+const startHealthServer = () => {
+	const port = Number(process.env.PORT)
+	if (!port) return
+	const server = http.createServer((request, response) => {
+		response.writeHead(200, { 'content-type': 'text/plain' })
+		response.end(request.url === '/health' ? 'ok' : 'baileys wasm soak')
+	})
+	server.listen(port, '0.0.0.0', () => {
+		console.log(JSON.stringify({ at: new Date().toISOString(), healthListening: port }))
+	})
+	const externalUrl = process.env.RENDER_EXTERNAL_URL
+	if (externalUrl) {
+		const ping = () => fetch(`${externalUrl}/health`).catch(() => {})
+		ping()
+		setInterval(ping, 240_000)
+	}
+}
 
 const connect = async () => {
 	sock = makeWASocket({
@@ -110,6 +129,7 @@ const finish = reason => {
 	process.exit(0)
 }
 
+startHealthServer()
 await connect()
 setInterval(() => {
 	const elapsed = elapsedMinutes()
