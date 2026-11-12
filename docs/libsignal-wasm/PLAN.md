@@ -301,7 +301,7 @@ Esa prueba corre en CI sin compilar Rust.
 ## Estado
 
 ```text
-Fase actual: 5 (1:1, grupo, retry y rollback vivos validados; faltan dispositivo que falla y soak largo)
+Fase actual: 5 (1:1, grupo, retry y rollback vivos validados; Render retirado, soak 72h en VPS)
 Bridge:      construido desde fuente
 QR:          pendiente
 Merge:       prohibido
@@ -352,3 +352,5 @@ como dependencia de produccion hasta que el adaptador y las pruebas de
 compatibilidad esten listos.
 
 - Evidencia live inbound de grupo: `evidence/live-group-inbound-2026-11-10.json`.
+
+- Soak 72h en VPS: `evidence/vps-soak-2026-11-12.json`.

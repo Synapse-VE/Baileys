@@ -62,7 +62,16 @@ Requiere que el auth de prueba ya este vinculado.
 
 ## Soak
 
-Runner reproducible del repo:
+Runner reproducible del repo (VPS):
+
+```bash
+systemctl status baileys-wasm-soak
+journalctl -u baileys-wasm-soak -n 40 --no-pager -o cat
+```
+
+Panel de control en el puerto 8080 del VPS; el token se guarda fuera del repo.
+
+Runner:
 
 ```bash
 npm run soak:wasm -- --auth .tools/auth-wasm --minutes 120
