@@ -38,6 +38,18 @@ let messages = 0
 let stopped = false
 let sock
 
+const describeDisconnect = error => {
+	if (!error) return null
+	const data = error.data && typeof error.data === 'object' ? error.data : undefined
+	return {
+		name: error.name,
+		message: error.message,
+		statusCode: error.output?.statusCode,
+		streamError: data?.fullErrorNode?.attrs ?? data?.errorNode?.attrs,
+		dataKeys: data ? Object.keys(data) : undefined
+	}
+}
+
 const startHealthServer = () => {
 	const port = Number(process.env.PORT)
 	if (!port) return
@@ -102,7 +114,8 @@ const connect = async () => {
 					connects,
 					closes,
 					messages,
-					reconnect: !loggedOut && !stopped
+					reconnect: !loggedOut && !stopped,
+					error: describeDisconnect(lastDisconnect?.error)
 				})
 			)
 			if (!loggedOut && !stopped) setTimeout(() => void connect().catch(console.error), 5_000)
