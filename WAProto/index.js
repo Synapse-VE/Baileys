@@ -143460,6 +143460,10 @@ export const proto = $root.proto = (() => {
             case 291:
                 m.messageStubType = 291;
                 break;
+            case "GROUP_CUSTOM_REACTIONS":
+            case 293:
+                m.messageStubType = 293;
+                break;
             }
             if (d.clearMedia != null) {
                 m.clearMedia = Boolean(d.clearMedia);
@@ -144554,6 +144558,7 @@ export const proto = $root.proto = (() => {
             values[valuesById[289] = "SPLIT_PAYMENT_MARKED_AS_PAID"] = 289;
             values[valuesById[290] = "POLL_OPTIONS_REMOVED"] = 290;
             values[valuesById[291] = "POLL_ADDED_OPTION_REMOVED"] = 291;
+            values[valuesById[293] = "GROUP_CUSTOM_REACTIONS"] = 293;
             return values;
         })();
 
