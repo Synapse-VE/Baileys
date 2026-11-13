@@ -1,0 +1,23 @@
+{
+  "date": "2026-11-10",
+  "backend": "wasm phase-1 SignalRepository",
+  "auth": ".tools/auth-wasm (test account, not production)",
+  "targetMinutes": 120,
+  "observed": {
+    "startedAtLocal": "14:39",
+    "stoppedAtLocal": "20:55",
+    "elapsedMinutes": 376,
+    "connection": "open at stop",
+    "connects": 2,
+    "closes": 3,
+    "closeCode": 408,
+    "messages": 14,
+    "reconnects": "3 close events at 15:20 local, then reconnect loop",
+    "gap": "about 5h34m without heartbeats while the machine was suspended/offline"
+  },
+  "result": "interrupted by a network cut and a long machine suspension; stopped manually after overshooting the 2h target",
+  "notes": [
+    "The runner did not log message content",
+    "No production credentials were used"
+  ]
+}

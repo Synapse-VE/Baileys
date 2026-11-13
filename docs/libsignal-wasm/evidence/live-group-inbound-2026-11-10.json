@@ -1,0 +1,20 @@
+{
+  "date": "2026-11-10",
+  "backend": "wasm phase-1 SignalRepository",
+  "auth": ".tools/auth-wasm (test account, not production)",
+  "group": "120363412345265330@g.us",
+  "inbound": {
+    "type": "notify",
+    "from": "120363412345265330@g.us",
+    "participant": "62415286866108@lid",
+    "fromMe": false,
+    "messageId": "ACCF71400A096178A69257F2F0A8443D",
+    "text": "PRUEBA_4",
+    "group": true
+  },
+  "result": "decrypted by the WASM repository as a group participant message",
+  "notes": [
+    "Message sent from the official bot phone",
+    "No production credentials were used"
+  ]
+}

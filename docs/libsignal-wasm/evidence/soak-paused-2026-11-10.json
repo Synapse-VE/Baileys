@@ -1,0 +1,18 @@
+{
+  "date": "2026-11-10",
+  "backend": "wasm phase-1 SignalRepository",
+  "auth": ".tools/auth-wasm (test account, not production)",
+  "targetMinutes": 120,
+  "observed": {
+    "elapsedMinutes": 26,
+    "connection": "open",
+    "reconnects": 0,
+    "closes": 0,
+    "messages": 3
+  },
+  "result": "paused by user before the 2-hour target; restart scheduled for 14:00 local time",
+  "notes": [
+    "Socket was stopped cleanly; auth remains on disk for a QR-less restart",
+    "No production credentials were used"
+  ]
+}

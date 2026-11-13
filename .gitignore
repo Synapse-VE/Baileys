@@ -18,6 +18,8 @@ docs/*
 !docs/.nojekyll
 !docs/protocol-sync/
 !docs/protocol-sync/**
+!docs/libsignal-wasm/
+!docs/libsignal-wasm/**
 lib
 messages*.json
 node_modules

@@ -1,0 +1,25 @@
+{
+  "date": "2026-11-09",
+  "backend": "wasm phase-1 SignalRepository",
+  "auth": ".tools/auth-wasm (test account, not production)",
+  "connection": "open",
+  "outbound": {
+    "result": "sent",
+    "message_id": "3EB0F154F2AD5C4120F5D3",
+    "receipt_status": 3,
+    "text": "Prueba WASM 1:1"
+  },
+  "inbound": {
+    "result": "decrypted",
+    "fromMe": false,
+    "text": "Prueba WASM 1:1",
+    "message_id": "AC0B502CA8B829CEF2E0A19AEB39D5E4",
+    "from": "62415286866108@lid"
+  },
+  "notes": [
+    "No production credentials were used",
+    "Test phone is separate from the official bot phone"
+  ],
+  "restart": "socket restarted from saved test auth without QR",
+  "phase1": "1:1 outbound, inbound, receipt and restart verified"
+}

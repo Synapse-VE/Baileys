@@ -1,0 +1,19 @@
+{
+  "date": "2026-11-12",
+  "service": "baileys-wasm-soak",
+  "provider": "Render",
+  "status": "suspended",
+  "reason": "Render soak segment completed and the workload moved to the VPS",
+  "lastSegment": {
+    "elapsedMinutes": 1455,
+    "connects": 5,
+    "closes": 4,
+    "messages": 451,
+    "disconnects": [
+      {"atLocal": "2026-11-11T15:52:14-04:00", "code": 428},
+      {"atLocal": "2026-11-11T16:16:25-04:00", "code": 428},
+      {"atLocal": "2026-11-11T18:58:27-04:00", "code": 503},
+      {"atLocal": "2026-11-11T21:15:49-04:00", "code": 428}
+    ]
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "date": "2026-11-10",
+  "backend": "wasm phase-1 SignalRepository",
+  "auth": ".tools/auth-wasm (same auth advanced by legacy, not production)",
+  "inbound": {
+    "type": "notify",
+    "from": "62415286866108@lid",
+    "fromMe": false,
+    "messageId": "AC12CA918D504C0DCC79875ADAB597CD",
+    "text": "Prueba_8"
+  },
+  "result": "decrypted by WASM after the legacy backend advanced the session",
+  "notes": [
+    "Previous message Prueba_7 was decrypted by legacy",
+    "Same auth directory, no QR and no re-link"
+  ]
+}
