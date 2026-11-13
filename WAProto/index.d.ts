@@ -1304,7 +1304,9 @@ export namespace proto {
             RICH_RESPONSE_SOCIAL_ENTITY_PREFETCH_SCHEDULER_ENABLED = 84,
             AI_MUSE_JARVIS_EXTENDED_CARDS_ENABLED = 85,
             AI_INTERJECTIONS_ENABLED = 86,
-            AI_RICH_RESPONSE_READ_ALOUD_ENABLED = 87
+            AI_RICH_RESPONSE_READ_ALOUD_ENABLED = 87,
+            AI_RICH_RESPONSE_ITEM_LISTS_ENABLED = 88,
+            RICH_RESPONSE_SIDE_BY_SIDE_BUFFER_BOTH = 89
         }
     }
 
@@ -2066,7 +2068,8 @@ export namespace proto {
         NEW_CHAT_LIST = 56,
         CONTACTS_TAB = 57,
         NEW_3P_AGENT_CREATION = 58,
-        SHARE = 59
+        SHARE = 59,
+        BIRTHDAY_BANNER = 60
     }
 
     interface IBotMetricsMetadata {
@@ -4555,6 +4558,9 @@ export namespace proto {
         acp2Setting?: (proto.IACP2Setting|null);
         acp2HistoryWithheld?: (boolean|null);
         groupRootKeys?: (proto.IGroupRootKey[]|null);
+        isWorkGroup?: (boolean|null);
+        nonE2EeType?: (number|null);
+        contactAccountEncryptionAttestationType?: (proto.NonE2EEAttestation.AccountType|null);
     }
 
     class Conversation implements IConversation {
@@ -4625,6 +4631,9 @@ export namespace proto {
         public acp2Setting?: (proto.IACP2Setting|null);
         public acp2HistoryWithheld?: (boolean|null);
         public groupRootKeys: proto.IGroupRootKey[];
+        public isWorkGroup?: (boolean|null);
+        public nonE2EeType?: (number|null);
+        public contactAccountEncryptionAttestationType?: (proto.NonE2EEAttestation.AccountType|null);
         public static create(properties?: proto.IConversation): proto.Conversation;
         public static encode(m: proto.IConversation, w?: $protobuf.Writer): $protobuf.Writer;
         public static decode(r: ($protobuf.Reader|Uint8Array), l?: number): proto.Conversation;
@@ -4987,6 +4996,7 @@ export namespace proto {
         platformType?: (proto.DeviceProps.PlatformType|null);
         requireFullSync?: (boolean|null);
         historySyncConfig?: (proto.DeviceProps.IHistorySyncConfig|null);
+        deviceName?: (string|null);
     }
 
     class DeviceProps implements IDeviceProps {
@@ -4996,6 +5006,7 @@ export namespace proto {
         public platformType?: (proto.DeviceProps.PlatformType|null);
         public requireFullSync?: (boolean|null);
         public historySyncConfig?: (proto.DeviceProps.IHistorySyncConfig|null);
+        public deviceName?: (string|null);
         public static create(properties?: proto.IDeviceProps): proto.DeviceProps;
         public static encode(m: proto.IDeviceProps, w?: $protobuf.Writer): $protobuf.Writer;
         public static decode(r: ($protobuf.Reader|Uint8Array), l?: number): proto.DeviceProps;
@@ -8825,6 +8836,7 @@ export namespace proto {
             videoContentUrl?: (string|null);
             musicMetadata?: (proto.IEmbeddedMusic|null);
             videoContentCaption?: (string|null);
+            videoId?: (string|null);
         }
 
         class LinkPreviewMetadata implements ILinkPreviewMetadata {
@@ -8838,6 +8850,7 @@ export namespace proto {
             public videoContentUrl?: (string|null);
             public musicMetadata?: (proto.IEmbeddedMusic|null);
             public videoContentCaption?: (string|null);
+            public videoId?: (string|null);
             public static create(properties?: proto.Message.ILinkPreviewMetadata): proto.Message.LinkPreviewMetadata;
             public static encode(m: proto.Message.ILinkPreviewMetadata, w?: $protobuf.Writer): $protobuf.Writer;
             public static decode(r: ($protobuf.Reader|Uint8Array), l?: number): proto.Message.LinkPreviewMetadata;
@@ -13136,6 +13149,8 @@ export namespace proto {
         pollInvalidated?: (boolean|null);
         pollNameHashHistory?: (proto.PollAdditionalMetadata.IPollNameHashHistoryEntry[]|null);
         originalOptions?: (proto.Message.PollCreationMessage.IOption[]|null);
+        pollOptionReplayEntries?: (proto.PollAdditionalMetadata.IPollOptionReplayEntry[]|null);
+        pollOptionReplayBase?: (proto.PollAdditionalMetadata.IPollOptionReplayBase|null);
     }
 
     class PollAdditionalMetadata implements IPollAdditionalMetadata {
@@ -13143,6 +13158,8 @@ export namespace proto {
         public pollInvalidated?: (boolean|null);
         public pollNameHashHistory: proto.PollAdditionalMetadata.IPollNameHashHistoryEntry[];
         public originalOptions: proto.Message.PollCreationMessage.IOption[];
+        public pollOptionReplayEntries: proto.PollAdditionalMetadata.IPollOptionReplayEntry[];
+        public pollOptionReplayBase?: (proto.PollAdditionalMetadata.IPollOptionReplayBase|null);
         public static create(properties?: proto.IPollAdditionalMetadata): proto.PollAdditionalMetadata;
         public static encode(m: proto.IPollAdditionalMetadata, w?: $protobuf.Writer): $protobuf.Writer;
         public static decode(r: ($protobuf.Reader|Uint8Array), l?: number): proto.PollAdditionalMetadata;
@@ -13170,6 +13187,85 @@ export namespace proto {
             public static toObject(m: proto.PollAdditionalMetadata.PollNameHashHistoryEntry, o?: $protobuf.IConversionOptions): { [k: string]: any };
             public toJSON(): { [k: string]: any };
             public static getTypeUrl(typeUrlPrefix?: string): string;
+        }
+
+        interface IPollOptionReplayBase {
+            boundaryTimestampMs?: (number|Long|null);
+            editTimestampMs?: (number|Long|null);
+            options?: (proto.PollAdditionalMetadata.PollOptionReplayBase.IOption[]|null);
+        }
+
+        class PollOptionReplayBase implements IPollOptionReplayBase {
+            constructor(p?: proto.PollAdditionalMetadata.IPollOptionReplayBase);
+            public boundaryTimestampMs?: (number|Long|null);
+            public editTimestampMs?: (number|Long|null);
+            public options: proto.PollAdditionalMetadata.PollOptionReplayBase.IOption[];
+            public static create(properties?: proto.PollAdditionalMetadata.IPollOptionReplayBase): proto.PollAdditionalMetadata.PollOptionReplayBase;
+            public static encode(m: proto.PollAdditionalMetadata.IPollOptionReplayBase, w?: $protobuf.Writer): $protobuf.Writer;
+            public static decode(r: ($protobuf.Reader|Uint8Array), l?: number): proto.PollAdditionalMetadata.PollOptionReplayBase;
+            public static fromObject(d: { [k: string]: any }): proto.PollAdditionalMetadata.PollOptionReplayBase;
+            public static toObject(m: proto.PollAdditionalMetadata.PollOptionReplayBase, o?: $protobuf.IConversionOptions): { [k: string]: any };
+            public toJSON(): { [k: string]: any };
+            public static getTypeUrl(typeUrlPrefix?: string): string;
+        }
+
+        namespace PollOptionReplayBase {
+
+            interface IOption {
+                optionHash?: (Uint8Array|null);
+                enteredTimestampMs?: (number|Long|null);
+                addMessageKey?: (proto.IMessageKey|null);
+            }
+
+            class Option implements IOption {
+                constructor(p?: proto.PollAdditionalMetadata.PollOptionReplayBase.IOption);
+                public optionHash?: (Uint8Array|null);
+                public enteredTimestampMs?: (number|Long|null);
+                public addMessageKey?: (proto.IMessageKey|null);
+                public static create(properties?: proto.PollAdditionalMetadata.PollOptionReplayBase.IOption): proto.PollAdditionalMetadata.PollOptionReplayBase.Option;
+                public static encode(m: proto.PollAdditionalMetadata.PollOptionReplayBase.IOption, w?: $protobuf.Writer): $protobuf.Writer;
+                public static decode(r: ($protobuf.Reader|Uint8Array), l?: number): proto.PollAdditionalMetadata.PollOptionReplayBase.Option;
+                public static fromObject(d: { [k: string]: any }): proto.PollAdditionalMetadata.PollOptionReplayBase.Option;
+                public static toObject(m: proto.PollAdditionalMetadata.PollOptionReplayBase.Option, o?: $protobuf.IConversionOptions): { [k: string]: any };
+                public toJSON(): { [k: string]: any };
+                public static getTypeUrl(typeUrlPrefix?: string): string;
+            }
+        }
+
+        interface IPollOptionReplayEntry {
+            type?: (proto.PollAdditionalMetadata.PollOptionReplayEntry.Type|null);
+            messageKey?: (proto.IMessageKey|null);
+            serverTimestampMs?: (number|Long|null);
+            editTimestampMs?: (number|Long|null);
+            optionHashes?: (Uint8Array[]|null);
+            revokedMessageKey?: (proto.IMessageKey|null);
+        }
+
+        class PollOptionReplayEntry implements IPollOptionReplayEntry {
+            constructor(p?: proto.PollAdditionalMetadata.IPollOptionReplayEntry);
+            public type?: (proto.PollAdditionalMetadata.PollOptionReplayEntry.Type|null);
+            public messageKey?: (proto.IMessageKey|null);
+            public serverTimestampMs?: (number|Long|null);
+            public editTimestampMs?: (number|Long|null);
+            public optionHashes: Uint8Array[];
+            public revokedMessageKey?: (proto.IMessageKey|null);
+            public static create(properties?: proto.PollAdditionalMetadata.IPollOptionReplayEntry): proto.PollAdditionalMetadata.PollOptionReplayEntry;
+            public static encode(m: proto.PollAdditionalMetadata.IPollOptionReplayEntry, w?: $protobuf.Writer): $protobuf.Writer;
+            public static decode(r: ($protobuf.Reader|Uint8Array), l?: number): proto.PollAdditionalMetadata.PollOptionReplayEntry;
+            public static fromObject(d: { [k: string]: any }): proto.PollAdditionalMetadata.PollOptionReplayEntry;
+            public static toObject(m: proto.PollAdditionalMetadata.PollOptionReplayEntry, o?: $protobuf.IConversionOptions): { [k: string]: any };
+            public toJSON(): { [k: string]: any };
+            public static getTypeUrl(typeUrlPrefix?: string): string;
+        }
+
+        namespace PollOptionReplayEntry {
+
+            enum Type {
+                UNKNOWN = 0,
+                EDIT = 1,
+                ADD = 2,
+                REVOKE = 3
+            }
         }
     }
 
