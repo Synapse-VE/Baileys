@@ -107,3 +107,8 @@ antiguo puede leerlas. La prueba de rollback esta en
 - No actualizar Bot-2.0 desde esta rama.
 - No usar credenciales de produccion.
 - No publicar el paquete con backend WASM como default todavia.
+
+## VPS updates
+
+`needrestart` esta configurado en modo solo-listar para no reiniciar
+`baileys-wasm-soak` ni `baileys-panel` durante upgrades de librerias.
