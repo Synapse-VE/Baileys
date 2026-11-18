@@ -9,6 +9,7 @@ import { aesDecryptGCM, aesEncryptGCM, Curve, hkdf, sha256 } from './crypto'
 import type { ILogger } from './logger'
 
 const IV_LENGTH = 12
+const MAX_IN_BUFFER_BYTES = 10 * 1024 * 1024
 
 const EMPTY_BUFFER = Buffer.alloc(0)
 
@@ -267,8 +268,19 @@ export const makeNoiseHandler = ({
 					inBytes = Buffer.concat([inBytes, newData])
 				}
 
+				if (inBytes.length > MAX_IN_BUFFER_BYTES) {
+					inBytes = EMPTY_BUFFER
+					throw new Boom('noise input buffer exceeded limit', { statusCode: 500 })
+				}
+
 				await processData(onFrame)
 			})
+		},
+		destroy: () => {
+			inBytes = EMPTY_BUFFER
+			pendingOnFrame = null
+			isWaitingForTransport = false
+			transport = null
 		}
 	}
 }

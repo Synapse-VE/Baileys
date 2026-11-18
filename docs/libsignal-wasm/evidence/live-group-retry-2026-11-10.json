@@ -1,0 +1,28 @@
+{
+  "date": "2026-11-10",
+  "backend": "wasm phase-1 SignalRepository",
+  "auth": ".tools/auth-wasm (test account, not production)",
+  "group": "120363412345265330@g.us",
+  "simulation": "removed the bot sender-key file before connecting",
+  "firstAttempt": {
+    "messageId": "AC72E0D480F6013DE3140C713F089EED",
+    "text": "Prueba-5",
+    "error": "no sender key state: no sender key record",
+    "retryReceipt": "sent",
+    "retryCount": 1
+  },
+  "afterRetry": {
+    "messageId": "AC72E0D480F6013DE3140C713F089EED",
+    "text": "Prueba-5",
+    "result": "decrypted and emitted"
+  },
+  "followUp": {
+    "messageId": "AC535B398480F8AA0B8539A5DCC87354",
+    "text": "Prueba_6",
+    "result": "decrypted normally"
+  },
+  "notes": [
+    "The retry was triggered by a missing sender key, not by a synthetic unit test",
+    "Only the test auth was modified"
+  ]
+}

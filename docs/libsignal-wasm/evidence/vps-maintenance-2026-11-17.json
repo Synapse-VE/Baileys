@@ -1,0 +1,34 @@
+{
+  "date": "2026-11-17",
+  "host": "VPS InterServer",
+  "maintenance": {
+    "packagesUpgraded": [
+      "software-properties-common 0.120 -> 0.120.2",
+      "python3-software-properties 0.120 -> 0.120.2",
+      "sos 4.11.2-0ubuntu0.1 -> 4.11.2-0ubuntu0.2",
+      "distro-info 1.15 -> 1.15ubuntu0.1",
+      "python3-distro-info 1.15 -> 1.15ubuntu0.1"
+    ],
+    "rebootRequiredBefore": "libc6",
+    "rebooted": true,
+    "rebootRequiredAfter": false,
+    "upgradableAfter": 0
+  },
+  "services": {
+    "baileys-wasm-soak": {
+      "state": "inactive",
+      "enabled": false,
+      "note": "Completed the 72h soak and was disabled to prevent a new run on reboot"
+    },
+    "baileys-panel": {
+      "state": "active",
+      "enabled": true,
+      "health": 200
+    }
+  },
+  "security": {
+    "ssh": "key-only root access",
+    "ufw": ["22/tcp", "8080/tcp"],
+    "needrestart": "list-only; no automatic service restarts"
+  }
+}

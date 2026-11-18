@@ -1,0 +1,17 @@
+{
+  "date": "2026-11-10",
+  "backend": "legacy libsignal-node (no makeSignalRepository)",
+  "auth": ".tools/auth-wasm (same auth written by WASM, not production)",
+  "inbound": {
+    "type": "notify",
+    "from": "62415286866108@lid",
+    "fromMe": false,
+    "messageId": "AC9E43C729082C4F36E0A8EE72F2FC89",
+    "text": "Prueba_7"
+  },
+  "result": "decrypted by the legacy backend without re-linking",
+  "notes": [
+    "The session was advanced by the WASM repository before the switch",
+    "Same auth directory, same test phone, no QR"
+  ]
+}

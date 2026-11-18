@@ -1,0 +1,13 @@
+[Unit]
+Description=Preserve Baileys soak connection events
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/opt/baileys-wasm/deploy/soak/watch-soak-events.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

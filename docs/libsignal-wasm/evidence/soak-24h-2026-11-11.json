@@ -1,0 +1,26 @@
+{
+  "date": "2026-11-11",
+  "backend": "wasm phase-1 SignalRepository",
+  "host": "Render",
+  "service": "baileys-wasm-soak",
+  "startedAtLocal": "2026-11-10T21:36:33-04:00",
+  "observedAtLocal": "2026-11-11T21:52:00-04:00",
+  "elapsedMinutes": 1455,
+  "targetMinutes": 4320,
+  "status": "live",
+  "healthHttp": 200,
+  "connects": 5,
+  "closes": 4,
+  "messages": 451,
+  "disconnects": [
+    {"atLocal": "2026-11-11T15:52:14-04:00", "code": 428, "reconnectSeconds": 7},
+    {"atLocal": "2026-11-11T16:16:25-04:00", "code": 428, "reconnectSeconds": 6},
+    {"atLocal": "2026-11-11T18:58:27-04:00", "code": 503, "reconnectSeconds": 6},
+    {"atLocal": "2026-11-11T21:15:49-04:00", "code": 428, "reconnectSeconds": 6}
+  ],
+  "notes": [
+    "428 is Baileys' internal connectionClosed code, not the raw WebSocket close code",
+    "The runner only recorded output.statusCode, so the underlying close reason was not available",
+    "No production credentials were used"
+  ]
+}

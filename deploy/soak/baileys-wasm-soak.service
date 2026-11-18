@@ -1,0 +1,19 @@
+[Unit]
+Description=Baileys WASM soak (Docker, ciclos de 72 h)
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/baileys-wasm
+ExecStartPre=-/usr/bin/docker rm -f baileys-wasm-soak
+ExecStart=/usr/bin/docker run --rm --name baileys-wasm-soak --network host --user 999:983 --log-driver journald --log-opt tag=baileys-wasm-soak -v /opt/baileys-wasm/.tools/auth-wasm:/auth baileys-wasm-soak:local --auth /auth --minutes 4320 --keepalive 25000 --tcp-keepalive 30000
+ExecStop=/usr/bin/docker stop --time 30 baileys-wasm-soak
+Restart=always
+RestartSec=10
+TimeoutStopSec=45
+KillMode=mixed
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,28 @@
+{
+  "date": "2026-11-09",
+  "bridge_source": "WhiskeySockets/Baileys@3a788d3d6dae1016e925ce95c2650f19c1208ebb",
+  "bridge_package": "packages/whatsapp-rust-bridge",
+  "core_commit": "9649af098260cf53b6b1d7c2434b1a21cd6378b3",
+  "build": {
+    "command": "npx wasm-pack build --target web --out-dir pkg --no-pack --no-opt",
+    "result": "ok",
+    "duration_seconds": 277,
+    "wasm_bytes": 1129851,
+    "exports": 46
+  },
+  "snapshot_poc": {
+    "result": "ok",
+    "message_type": 3,
+    "ciphertext_bytes": 146,
+    "removed_pre_key_id": 1,
+    "session_bytes": 379,
+    "round_trip": "hola desde wasm",
+    "reply": "respuesta wasm"
+  },
+  "pending": [
+    "QR test phone pairing",
+    "Baileys SignalRepository adapter",
+    "legacy auth migration",
+    "live bot receive test"
+  ]
+}

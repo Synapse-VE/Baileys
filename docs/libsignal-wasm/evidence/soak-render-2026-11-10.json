@@ -1,0 +1,38 @@
+{
+  "date": "2026-11-10",
+  "backend": "wasm phase-1 SignalRepository",
+  "host": "Render",
+  "service": {
+    "id": "srv-dbps4p0n74is738takbg",
+    "name": "baileys-wasm-soak",
+    "url": "https://baileys-wasm-soak.onrender.com",
+    "health": "https://baileys-wasm-soak.onrender.com/health",
+    "plan": "free",
+    "region": "virginia"
+  },
+  "authStorage": {
+    "provider": "Supabase Storage",
+    "project": "auth-whatsapp",
+    "object": "baileys-soak-auth/auth-wasm.tar.gz",
+    "public": false
+  },
+  "startedAtLocal": "2026-11-10T21:36:33-04:00",
+  "targetMinutes": 4320,
+  "firstProof": {
+    "deployStatus": "live",
+    "healthHttp": 200,
+    "connection": "open",
+    "connects": 1,
+    "closes": 0,
+    "messagesAtFirstHeartbeat": 0
+  },
+  "alarm": {
+    "scheduledForLocal": "2026-11-13T21:30:00-04:00",
+    "taskId": "schedule-485e2669-a852-401a-a479-9cc6a16280a4"
+  },
+  "notes": [
+    "No Baileys core code was changed for Render; only the soak runner exposes a health endpoint",
+    "The run logs IDs and message lengths, never message text",
+    "No production credentials were used"
+  ]
+}

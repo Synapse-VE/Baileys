@@ -10,6 +10,18 @@ import type { SignalRepositoryWithLIDStore } from './Signal'
 export type WAVersion = [number, number, number]
 export type WABrowserDescription = [string, string, string]
 
+/** Live transport health for observability. */
+export type ConnectionHealth = {
+	connected: boolean
+	connectedAt: Date | null
+	lastInboundAt: Date | null
+	lastPingAt: Date | null
+	lastPingRttMs: number | null
+	consecutivePingFailures: number
+	pingsSent: number
+	pingsFailed: number
+}
+
 export type CacheStore = {
 	/** get a cached key and change the stats */
 	get<T>(key: string): Promise<T> | T | undefined
@@ -39,6 +51,8 @@ export type SocketConfig = {
 	defaultQueryTimeoutMs: number | undefined
 	/** ping-pong interval for WS connection */
 	keepAliveIntervalMs: number
+	/** enable TCP keepalive on the underlying socket; 0 disables it */
+	tcpKeepAliveMs?: number
 	/** should baileys use the mobile api instead of the multi device api
 	 * @deprecated This feature has been removed
 	 */

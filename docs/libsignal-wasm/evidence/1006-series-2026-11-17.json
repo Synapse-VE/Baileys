@@ -1,0 +1,62 @@
+{
+  "date": "2026-11-17",
+  "campaign": "instrumented VPS soak",
+  "events": [
+    {
+      "atLocal": "2026-11-17T15:17:02.774-04:00",
+      "type": "ws close 1006",
+      "closeCode": 1006,
+      "server": "157.240.241.60:443",
+      "client": "162.246.22.156:42320",
+      "serverSentBytes": 24,
+      "reset": true,
+      "fin": false,
+      "lastInboundBeforeMs": 1134,
+      "pingRttMs": 35,
+      "pingFailures": 0,
+      "eventLoopP99Ms": 20.4,
+      "reconnectMs": 4173,
+      "nextServer": "157.240.11.53:443"
+    },
+    {
+      "atLocal": "2026-11-17T18:58:19.823-04:00",
+      "type": "ws close 1006",
+      "closeCode": 1006,
+      "server": "157.240.11.53:443",
+      "client": "162.246.22.156:55494",
+      "reset": true,
+      "fin": false,
+      "pingRttMs": 126,
+      "pingFailures": 0,
+      "eventLoopP99Ms": 20.32
+    },
+    {
+      "atLocal": "2026-11-17T18:59:49.045-04:00",
+      "type": "stream errored 503",
+      "closeCode": 503,
+      "serverSide": true,
+      "pingFailures": 0,
+      "eventLoopP99Ms": 21.27,
+      "note": "Reconnect after the previous 1006 was rejected by the stream about 90s later."
+    },
+    {
+      "atLocal": "2026-11-17T20:47:20.666-04:00",
+      "type": "ws close 1006",
+      "closeCode": 1006,
+      "server": "57.144.181.32:443",
+      "client": "162.246.22.156:36294",
+      "reset": true,
+      "fin": false,
+      "pingRttMs": 78,
+      "pingFailures": 0,
+      "eventLoopP99Ms": 20.3
+    }
+  ],
+  "runTotals": {
+    "connects": 5,
+    "closes": 4,
+    "messages": 962,
+    "stableAfterLastCloseHours": 19
+  },
+  "conclusion": "The three captured 1006 events were server/edge TCP resets, with the client healthy immediately before each close and zero ping failures. This rules out keepalive starvation and event-loop blocking as the cause of the 1006s. The 503 is a separate server-side stream error. More samples are needed to identify the WhatsApp-side trigger (edge recycle, load, or policy)."
+}

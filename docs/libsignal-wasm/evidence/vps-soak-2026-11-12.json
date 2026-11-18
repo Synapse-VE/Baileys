@@ -1,0 +1,43 @@
+{
+  "date": "2026-11-12",
+  "host": "VPS InterServer",
+  "os": "Ubuntu 26.04.1 LTS",
+  "hardware": {
+    "cpu": 1,
+    "ramGiB": 1.6,
+    "swapGiB": 1,
+    "diskFreeGiB": 31
+  },
+  "runtime": {
+    "node": "24.22.3",
+    "yarn": "4.9.2",
+    "repo": "/opt/baileys-wasm",
+    "branch": "feat/libsignal-wasm",
+    "commit": "21edc28"
+  },
+  "soak": {
+    "service": "baileys-wasm-soak.service",
+    "startedAtLocal": "2026-11-12T09:02:03-04:00",
+    "targetMinutes": 4320,
+    "status": "active",
+    "connects": 1,
+    "closes": 0,
+    "messages": 0
+  },
+  "controlPanel": {
+    "service": "baileys-panel.service",
+    "status": "active",
+    "port": 8080,
+    "auth": "basic token stored outside the repo"
+  },
+  "render": {
+    "service": "baileys-wasm-soak",
+    "status": "suspended",
+    "reason": "retired after completing the Render soak segment"
+  },
+  "notes": [
+    "Bot-2.0 remains on Render and was not touched",
+    "No production credentials were used",
+    "Render-specific health code was removed from the soak runner"
+  ]
+}

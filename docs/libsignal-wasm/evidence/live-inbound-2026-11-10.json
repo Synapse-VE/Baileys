@@ -1,0 +1,13 @@
+{
+  "date": "2026-11-10",
+  "backend": "wasm phase-1 SignalRepository",
+  "auth": ".tools/auth-wasm (test account, not production)",
+  "transport": "1:1",
+  "inbound": "decrypted",
+  "fromMeReplyObserved": true,
+  "content": "redacted",
+  "notes": [
+    "Real contact message, not a loopback or bot echo",
+    "No production credentials were used"
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "date": "2026-11-16",
+  "host": "VPS InterServer",
+  "service": "baileys-wasm-soak.service",
+  "status": "completed",
+  "result": "success",
+  "startedAtLocal": "2026-11-13T06:04:04-04:00",
+  "finishedAtLocal": "2026-11-16T06:04:06-04:00",
+  "targetMinutes": 4320,
+  "elapsedMinutes": 4320,
+  "exitCode": 0,
+  "nRestarts": 0,
+  "connects": 5,
+  "closes": 4,
+  "messages": 1675,
+  "currentRunDisconnects": [
+    {"atLocal": "2026-11-13T15:44:46-04:00", "code": 1006},
+    {"atLocal": "2026-11-13T16:17:07-04:00", "code": 1006},
+    {"atLocal": "2026-11-13T21:23:57-04:00", "code": 1006},
+    {"atLocal": "2026-11-13T22:25:48-04:00", "code": 1006}
+  ],
+  "notes": [
+    "The previous process was restarted by a libc unattended upgrade on 2026-11-13 at 06:04; this run is the post-restart 72h run.",
+    "All four closes in the completed run were ws close 1006; no stream 503 in this run.",
+    "Panel remains active; the soak unit was disabled after completion so it will not start a new run on reboot."
+  ]
+}

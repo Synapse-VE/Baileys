@@ -1,0 +1,14 @@
+[Unit]
+Description=Metadata-only packet capture for Baileys 1006 investigation
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStartPre=/usr/bin/mkdir -p /var/log/baileys-soak
+ExecStart=/usr/bin/tcpdump -i eth0 -n -U --immediate-mode -Z root -s 80 -C 10 -W 20 -w /var/log/baileys-soak/capture.pcap 'tcp port 443'
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

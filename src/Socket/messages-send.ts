@@ -41,6 +41,7 @@ import { getUrlInfo } from '../Utils/link-preview'
 import { makeKeyedMutex, makeMutex } from '../Utils/make-mutex'
 import { getMessageReportingToken, shouldIncludeReportingToken } from '../Utils/reporting-utils'
 import { hasUsableSenderKey } from '../Utils/sender-key'
+import { findJidsWithoutSession } from '../Utils/session-validation'
 import {
 	commitTcTokenWithIndex,
 	isTcTokenExpired,
@@ -499,20 +500,12 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 	const assertSessions = async (jids: string[], force?: boolean) => {
 		let didFetchNewSession = false
 		const uniqueJids = [...new Set(jids)]
-		const jidsRequiringFetch: string[] = []
 
 		logger.debug({ jids }, 'assertSessions call with jids')
 
-		for (const jid of uniqueJids) {
-			if (!force) {
-				const sessionValidation = await signalRepository.validateSession(jid)
-				if (sessionValidation.exists) {
-					continue
-				}
-			}
-
-			jidsRequiringFetch.push(jid)
-		}
+		const jidsRequiringFetch = await findJidsWithoutSession(uniqueJids, jid => signalRepository.validateSession(jid), {
+			force
+		})
 
 		if (jidsRequiringFetch.length) {
 			// LID if mapped, otherwise original
@@ -1007,12 +1000,11 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 
 				let messageToSend = message
 				if (isGroupOrStatus) {
-					let groupSenderIdentity: string | undefined
-					if (meLid && (await signalRepository.hasSenderKey({ group: destinationJid, meId: meLid }))) {
-						groupSenderIdentity = meLid
-					} else if (await signalRepository.hasSenderKey({ group: destinationJid, meId })) {
-						groupSenderIdentity = meId
-					}
+					const [hasLidSenderKey, hasPnSenderKey] = await Promise.all([
+						meLid ? signalRepository.hasSenderKey({ group: destinationJid, meId: meLid }) : false,
+						signalRepository.hasSenderKey({ group: destinationJid, meId })
+					])
+					const groupSenderIdentity = hasLidSenderKey ? meLid : hasPnSenderKey ? meId : undefined
 
 					if (groupSenderIdentity) {
 						try {

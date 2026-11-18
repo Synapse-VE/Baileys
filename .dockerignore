@@ -1,0 +1,15 @@
+.git
+.gitignore
+.tools
+.yarn
+node_modules
+lib
+coverage
+docs
+docker
+contactos-por-cedula.vcf
+*.log
+.env*
+auth_info*
+baileys_auth_info*
+contactos-por-cedula.*

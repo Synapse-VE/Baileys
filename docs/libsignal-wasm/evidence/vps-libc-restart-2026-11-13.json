@@ -1,0 +1,37 @@
+{
+  "date": "2026-11-13",
+  "host": "VPS InterServer",
+  "event": "userspace service restart after unattended libc upgrade",
+  "kernelReboot": false,
+  "evidence": {
+    "uptime": "23h 8m at inspection",
+    "bootId": "bc880bbe-c1c2-4b61-96e9-e591028a579d",
+    "rebootRequired": true,
+    "upgrade": "libc6 2.43-2ubuntu2.4 -> 2.43-2ubuntu2.7",
+    "upgradeTimeLocal": "2026-11-13T06:03:49-04:00",
+    "restartTimeLocal": "2026-11-13T06:04:04-04:00"
+  },
+  "previousSoak": {
+    "elapsedMinutes": 1262,
+    "messages": 393,
+    "connects": 6,
+    "closes": 5,
+    "disconnects": [
+      {"atLocal": "2026-11-12T13:18:49-04:00", "code": 503, "message": "Stream Errored (unknown)"},
+      {"atLocal": "2026-11-12T18:48:27-04:00", "code": 503, "message": "Stream Errored (unknown)"},
+      {"atLocal": "2026-11-12T18:59:18-04:00", "code": 503, "message": "Stream Errored (unknown)"},
+      {"atLocal": "2026-11-13T01:05:22-04:00", "code": 428, "message": "Connection Terminated (ws close 1006)"},
+      {"atLocal": "2026-11-13T01:32:58-04:00", "code": 428, "message": "Connection Terminated (ws close 1006)"}
+    ]
+  },
+  "fix": {
+    "needrestart": "/etc/needrestart/conf.d/99-baileys-soak.conf",
+    "restartMode": "list only",
+    "overrides": ["baileys-wasm-soak.service", "baileys-panel.service"],
+    "automaticReboot": false
+  },
+  "notes": [
+    "The service was restarted, not the VPS",
+    "The current 72h timer restarted at 2026-11-13T06:04:04-04:00"
+  ]
+}

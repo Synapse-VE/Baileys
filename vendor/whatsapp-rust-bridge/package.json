@@ -1,0 +1,14 @@
+{
+	"name": "@synapse-ve/whatsapp-rust-bridge-wasm",
+	"version": "0.0.0-wasm.1",
+	"private": true,
+	"type": "module",
+	"main": "./pkg/whatsapp_rust_bridge.js",
+	"types": "./pkg/whatsapp_rust_bridge.d.ts",
+	"exports": {
+		".": {
+			"import": "./pkg/whatsapp_rust_bridge.js",
+			"types": "./pkg/whatsapp_rust_bridge.d.ts"
+		}
+	}
+}

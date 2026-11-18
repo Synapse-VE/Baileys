@@ -1,0 +1,34 @@
+{
+  "date": "2026-11-17",
+  "event": "first instrumented ws close 1006 captured",
+  "atLocal": "2026-11-17T15:17:02.774-04:00",
+  "atUtc": "2026-11-17T19:17:02.774Z",
+  "connectionUptimeMs": 17525188,
+  "messages": 210,
+  "close": {
+    "code": 1006,
+    "reason": null,
+    "wasClean": false
+  },
+  "healthBeforeClose": {
+    "lastInboundAt": "2026-11-17T15:17:01.630-04:00",
+    "lastPingAt": "2026-11-17T15:17:01.595-04:00",
+    "lastPingRttMs": 35,
+    "pingsSent": 700,
+    "pingsFailed": 0,
+    "eventLoopP99Ms": 20.4,
+    "eventLoopMaxMs": 27.74,
+    "cpuPct": 0.64,
+    "rssMb": 113.9
+  },
+  "network": {
+    "server": "157.240.241.60:443",
+    "oldEdge": "157.240.241.60",
+    "newEdge": "157.240.11.53",
+    "serverSent": "24-byte TCP payload followed by RST",
+    "clientFin": false,
+    "reconnectDelayMs": 4173
+  },
+  "interpretation": "The client was healthy immediately before the close. The WhatsApp edge sent a 24-byte segment and then reset the TCP connection (RST); the client reconnected 4.2s later to a different edge IP. This is not a keepalive failure or event-loop stall.",
+  "captureIssue": "tcpdump was buffered and the watcher copied the file before the last 2.5 minutes were flushed. Stopping tcpdump gracefully recovered the close packets. The unit now uses -U --immediate-mode."
+}

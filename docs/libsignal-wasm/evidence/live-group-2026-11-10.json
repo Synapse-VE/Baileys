@@ -1,0 +1,17 @@
+{
+  "date": "2026-11-10",
+  "backend": "wasm phase-1 SignalRepository",
+  "auth": ".tools/auth-wasm (test account, not production)",
+  "group": "120363412345265330@g.us",
+  "outbound": {
+    "result": "sent",
+    "message_id": "3EB0608ECE94B000FF6820",
+    "text": "Grupo WASM 1:1"
+  },
+  "receipt": "received",
+  "inbound": "pending test-account group reply",
+  "notes": [
+    "The bot is a member of the test group",
+    "No production credentials were used"
+  ]
+}
